@@ -4,6 +4,8 @@ import { authorizeRole } from "../../middlewares/auth/authorizeMiddleware.js";
 import {
   listVendorOpenings,
   getVendorOpening,
+  presignCandidateProfiles,
+  uploadCandidateProfiles,
 } from "../../controllers/controllers.js";
 
 /**
@@ -32,6 +34,28 @@ router.get(
   authenticateUser as RequestHandler,
   authorizeRole("IT_VENDOR") as RequestHandler,
   getVendorOpening as RequestHandler
+);
+
+/**
+ * POST /api/v1/vendor/openings/:id/profiles/presign
+ * Generates S3 presigned upload URLs and encrypted upload tokens for candidate files
+ */
+router.post(
+  "/:id/profiles/presign",
+  authenticateUser as RequestHandler,
+  authorizeRole("IT_VENDOR") as RequestHandler,
+  presignCandidateProfiles as RequestHandler
+);
+
+/**
+ * POST /api/v1/vendor/openings/:id/profiles/upload
+ * Atomically submits uploaded candidate profiles in ONE transaction
+ */
+router.post(
+  "/:id/profiles/upload",
+  authenticateUser as RequestHandler,
+  authorizeRole("IT_VENDOR") as RequestHandler,
+  uploadCandidateProfiles as RequestHandler
 );
 
 export default router;

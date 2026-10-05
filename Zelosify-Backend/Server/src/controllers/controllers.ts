@@ -31,7 +31,15 @@ export {
 export {
   listVendorOpenings,
   getVendorOpening,
+  presignCandidateProfiles,
+  uploadCandidateProfiles,
 } from "./vendor/openings/vendorOpeningController.js";
+
+// Vendor candidate profiles
+export {
+  softDeleteProfile,
+  previewProfile,
+} from "./vendor/profiles/vendorProfileController.js";
 
 // ===== HIRING MANAGEMENT =====
 export { fetchData } from "./hiring/hiringProfileController.js";
@@ -41,4 +49,5 @@ export {
   listHiringManagerOpenings,
   getHiringManagerOpeningProfiles,
 } from "./hiring/hiringOpeningController.js";
+
 
