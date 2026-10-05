@@ -27,5 +27,18 @@ export {
   //   // deleteAttachment,
 } from "./vendor/resourceRequest/vendorRequestController.js";
 
+// Vendor openings
+export {
+  listVendorOpenings,
+  getVendorOpening,
+} from "./vendor/openings/vendorOpeningController.js";
+
 // ===== HIRING MANAGEMENT =====
 export { fetchData } from "./hiring/hiringProfileController.js";
+
+// Hiring manager openings
+export {
+  listHiringManagerOpenings,
+  getHiringManagerOpeningProfiles,
+} from "./hiring/hiringOpeningController.js";
+

@@ -29,35 +29,79 @@ async function seedOpenings() {
       console.log(`ℹ️ Tenant already exists: ${tenant.companyName} (${tenant.tenantId})`);
     }
 
-    // 2. Ensure a valid Hiring Manager user exists for this tenant
-    const hiringManagerEmail = "lucius.fox@waynecorp.com";
-    const hiringManager = await prisma.user.upsert({
-      where: {
-        email_provider: {
-          email: hiringManagerEmail,
+    // 2. Resolve Hiring Manager for this tenant
+    const seedEmail = process.env.SEED_HIRING_MANAGER_EMAIL?.trim();
+    let hiringManager: any = null;
+
+    // Preference A: Environment variable SEED_HIRING_MANAGER_EMAIL if specified
+    if (seedEmail) {
+      hiringManager = await prisma.user.findFirst({
+        where: {
+          email: seedEmail,
+          tenantId: tenant.tenantId,
+        },
+      });
+      if (hiringManager) {
+        console.log(
+          `🎯 Found hiring manager matching SEED_HIRING_MANAGER_EMAIL (${seedEmail}): ${hiringManager.id}`
+        );
+      } else {
+        console.log(
+          `⚠️ SEED_HIRING_MANAGER_EMAIL specified (${seedEmail}) but not found in tenant. Checking existing managers...`
+        );
+      }
+    }
+
+    // Preference B: Existing HIRING_MANAGER user belonging to Bruce Wayne Corp
+    if (!hiringManager) {
+      hiringManager = await prisma.user.findFirst({
+        where: {
+          tenantId: tenant.tenantId,
+          role: "HIRING_MANAGER",
+        },
+      });
+      if (hiringManager) {
+        console.log(
+          `🏢 Using existing HIRING_MANAGER in ${companyName}: ${hiringManager.email} (${hiringManager.id})`
+        );
+      }
+    }
+
+    // Preference C: Fallback to seed user Lucius Fox
+    if (!hiringManager) {
+      const fallbackEmail = "lucius.fox@waynecorp.com";
+      hiringManager = await prisma.user.upsert({
+        where: {
+          email_provider: {
+            email: fallbackEmail,
+            provider: "KEYCLOAK",
+          },
+        },
+        update: {
+          tenantId: tenant.tenantId,
+          role: "HIRING_MANAGER",
+          department: "Applied Sciences & Engineering",
+        },
+        create: {
+          username: "lucius.fox",
+          email: fallbackEmail,
+          firstName: "Lucius",
+          lastName: "Fox",
+          role: "HIRING_MANAGER",
+          department: "Applied Sciences & Engineering",
+          tenantId: tenant.tenantId,
+          externalId: "seed-hiring-manager-lucius-fox",
+          profileComplete: true,
           provider: "KEYCLOAK",
         },
-      },
-      update: {
-        tenantId: tenant.tenantId,
-        role: "HIRING_MANAGER",
-        department: "Applied Sciences & Engineering",
-      },
-      create: {
-        username: "lucius.fox",
-        email: hiringManagerEmail,
-        firstName: "Lucius",
-        lastName: "Fox",
-        role: "HIRING_MANAGER",
-        department: "Applied Sciences & Engineering",
-        tenantId: tenant.tenantId,
-        externalId: "seed-hiring-manager-lucius-fox",
-        profileComplete: true,
-        provider: "KEYCLOAK",
-      },
-    });
+      });
+      console.log(
+        `👤 Created/verified fallback seed hiring manager: Lucius Fox (${hiringManager.id})`
+      );
+    }
+
     console.log(
-      `✅ Using hiring manager: ${hiringManager.firstName} ${hiringManager.lastName} (${hiringManager.id})`
+      `✅ Using hiring manager: ${hiringManager.firstName || hiringManager.username || hiringManager.email} (${hiringManager.id})`
     );
 
     // 3. Define 12 diverse, realistic contract openings
