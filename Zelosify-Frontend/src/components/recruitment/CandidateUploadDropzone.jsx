@@ -219,7 +219,7 @@ export default function CandidateUploadDropzone({
 
       {/* Global Error Banner */}
       {globalError && (
-        <div className="flex items-center gap-2 p-3 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-coral/10 border border-coral/30 text-coral text-xs">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{globalError}</span>
         </div>
@@ -227,21 +227,23 @@ export default function CandidateUploadDropzone({
 
       {/* File Queue List */}
       {fileQueue.length > 0 && (
-        <div className="rounded-lg border border-border bg-card divide-y divide-border overflow-hidden">
+        <div className="rounded-card border border-border/80 bg-card divide-y divide-border/60 overflow-hidden shadow-key">
           <div className="px-4 py-2.5 bg-muted/40 flex justify-between items-center text-xs font-medium text-muted-foreground">
-            <span>Selected Files ({fileQueue.length}/{MAX_FILES})</span>
+            <span className="font-mono text-[11px] uppercase tracking-wider">
+              Selected Files ({fileQueue.length}/{MAX_FILES})
+            </span>
             {!isSubmitting && (
               <button
                 type="button"
                 onClick={() => setFileQueue([])}
-                className="hover:text-foreground transition-colors"
+                className="hover:text-foreground transition-colors text-xs"
               >
                 Clear all
               </button>
             )}
           </div>
 
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/40">
             {fileQueue.map((item) => (
               <div key={item.id} className="p-3 text-xs space-y-2">
                 <div className="flex items-center justify-between">
@@ -250,30 +252,30 @@ export default function CandidateUploadDropzone({
                     <span className="font-medium text-foreground truncate max-w-xs sm:max-w-md">
                       {item.file.name}
                     </span>
-                    <span className="text-muted-foreground shrink-0">
+                    <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
                       ({(item.file.size / (1024 * 1024)).toFixed(1)} MB)
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {item.status === "s3_completed" || item.status === "submitted" ? (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <span className="inline-flex items-center gap-1 text-[#59d499] font-medium">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         Uploaded
                       </span>
                     ) : item.status === "uploading" ? (
-                      <span className="text-blue-600 dark:text-blue-400 font-medium">
+                      <span className="text-[#56c2ff] font-mono font-medium">
                         {item.progress}%
                       </span>
                     ) : item.status === "failed" ? (
-                      <span className="text-rose-600 dark:text-rose-400 font-medium">
+                      <span className="text-coral font-medium">
                         Failed
                       </span>
                     ) : !isSubmitting ? (
                       <button
                         type="button"
                         onClick={() => removeFile(item.id)}
-                        className="text-muted-foreground hover:text-foreground p-1"
+                        className="text-muted-foreground hover:text-foreground p-1 rounded"
                         aria-label="Remove file"
                       >
                         <X className="w-3.5 h-3.5" />
@@ -286,7 +288,7 @@ export default function CandidateUploadDropzone({
                 {item.status === "uploading" && (
                   <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-600 transition-all duration-150"
+                      className="h-full bg-[#56c2ff] transition-all duration-150"
                       style={{ width: `${item.progress}%` }}
                     />
                   </div>

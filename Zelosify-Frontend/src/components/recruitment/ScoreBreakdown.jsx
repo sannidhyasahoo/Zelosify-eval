@@ -23,9 +23,9 @@ export default function ScoreBreakdown({ scores, className = "" }) {
   const locPct = formatPercent(location);
 
   const items = [
-    { label: "Skills", percent: skillsPct, color: "bg-blue-600 dark:bg-blue-500" },
-    { label: "Experience", percent: expPct, color: "bg-emerald-600 dark:bg-emerald-500" },
-    { label: "Location", percent: locPct, color: "bg-indigo-600 dark:bg-indigo-500" },
+    { label: "Skills", percent: skillsPct, color: "bg-[#59d499]" },
+    { label: "Experience", percent: expPct, color: "bg-[#56c2ff]" },
+    { label: "Location", percent: locPct, color: "bg-white/80" },
   ];
 
   return (
@@ -34,7 +34,7 @@ export default function ScoreBreakdown({ scores, className = "" }) {
         <div key={label} className="text-xs">
           <div className="flex justify-between items-center mb-1">
             <span className="font-medium text-muted-foreground">{label}</span>
-            <span className="font-semibold text-foreground">{percent}%</span>
+            <span className="font-mono font-semibold text-foreground">{percent}%</span>
           </div>
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div

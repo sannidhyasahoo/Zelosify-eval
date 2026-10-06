@@ -9,7 +9,7 @@ const EmptyState = ({
   // Fallback SVG icon if no illustration or icon is provided
   const DefaultEmptyIcon = () => (
     <svg
-      className="w-16 h-16 text-gray-400"
+      className="w-16 h-16 text-muted-foreground/60"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"

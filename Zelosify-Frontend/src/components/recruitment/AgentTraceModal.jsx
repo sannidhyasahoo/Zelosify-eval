@@ -36,7 +36,7 @@ export default function AgentTraceModal({
       <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#56c2ff]/10 text-[#56c2ff] border border-[#56c2ff]/20 flex items-center justify-center">
               <Cpu className="w-4 h-4" />
             </div>
             <div>
@@ -52,8 +52,8 @@ export default function AgentTraceModal({
 
         <div className="space-y-4 pt-2">
           {/* Subtle Explanatory Notice */}
-          <div className="flex items-start gap-2.5 p-3 rounded-md bg-muted/60 text-xs text-muted-foreground border border-border">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-muted/60 text-xs text-muted-foreground border border-border/80">
+            <ShieldCheck className="w-4 h-4 text-[#59d499] shrink-0 mt-0.5" />
             <div className="space-y-0.5">
               <p className="font-medium text-foreground">Secure Pipeline Verification</p>
               <p className="leading-relaxed">
@@ -144,7 +144,7 @@ export default function AgentTraceModal({
                     key={i}
                     className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-muted text-foreground text-xs font-mono border border-border"
                   >
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <CheckCircle2 className="w-3 h-3 text-[#59d499]" />
                     {toolName}
                   </span>
                 ))}

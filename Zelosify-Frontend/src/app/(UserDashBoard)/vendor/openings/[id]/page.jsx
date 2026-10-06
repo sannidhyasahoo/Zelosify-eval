@@ -255,15 +255,15 @@ export default function VendorOpeningDetailPage({ params }) {
 
       {/* Action Error Banner */}
       {actionError && (
-        <div className="flex items-center gap-2 p-3 rounded-md bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-coral/10 border border-coral/30 text-coral text-xs">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{actionError}</span>
         </div>
       )}
 
       {/* Candidate Submissions Operational Table */}
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <div className="p-4 border-b border-border flex justify-between items-center">
+      <div className="rounded-card border border-border/80 bg-card shadow-key overflow-hidden">
+        <div className="p-4 border-b border-border/70 flex justify-between items-center bg-muted/20">
           <div>
             <h2 className="text-sm font-semibold text-foreground">
               Submitted Candidates ({profiles.length})
@@ -297,18 +297,18 @@ export default function VendorOpeningDetailPage({ params }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-muted/40 border-b border-border text-muted-foreground font-medium">
-                  <th className="py-3 px-4">Filename</th>
-                  <th className="py-3 px-4">Submitted Time</th>
-                  <th className="py-3 px-4">Analysis Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                <tr className="bg-muted/40 border-b border-border/70 text-muted-foreground font-medium">
+                  <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Filename</th>
+                  <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Submitted Time</th>
+                  <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Analysis Status</th>
+                  <th className="py-3 px-4 text-right font-mono text-[11px] uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border/40">
                 {profiles.map((profile) => (
                   <tr
                     key={profile.id}
-                    className="hover:bg-muted/20 transition-colors"
+                    className="hover:bg-muted/30 transition-colors"
                   >
                     <td className="py-3 px-4 font-medium text-foreground">
                       <div className="flex items-center gap-2">
@@ -344,7 +344,7 @@ export default function VendorOpeningDetailPage({ params }) {
                           variant="ghost"
                           size="sm"
                           onClick={() => setProfileToDelete(profile)}
-                          className="h-7 px-2 text-xs gap-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                          className="h-7 px-2 text-xs gap-1 text-coral hover:bg-coral/10"
                           title="Remove candidate submission"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

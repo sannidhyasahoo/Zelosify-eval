@@ -16,8 +16,8 @@ export default function LandingNavbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-3 bg-[#040506]/85 backdrop-blur-md border-b border-[#1b1c1e]">
-      <div className="w-full max-w-6xl flex items-center justify-between">
+    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+      <div className="w-full max-w-5xl rounded-full border border-[#363739] bg-[#040506]/80 backdrop-blur-2xl shadow-float px-5 py-2.5 flex items-center justify-between pointer-events-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5">
           <img

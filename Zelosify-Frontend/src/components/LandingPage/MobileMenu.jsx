@@ -22,15 +22,22 @@ const MobileMenu = ({ isMenuOpen, closeMenu }) => {
       initial="closed"
       animate={isMenuOpen ? "open" : "closed"}
       variants={menuVariants}
-      className="md:hidden fixed inset-0 bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 flex flex-col items-stretch justify-start p-6 overflow-y-auto z-50"
+      className="md:hidden fixed inset-0 bg-[#040506]/95 backdrop-blur-2xl flex flex-col items-stretch justify-start p-6 overflow-y-auto z-50 border-l border-[#2f3031]"
     >
-      <div className="flex justify-end mb-8">
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#1b1c1e]">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md bg-[#ff6363] flex items-center justify-center font-bold text-black text-xs">
+            Z
+          </div>
+          <span className="font-semibold text-white tracking-tight">Zelosify</span>
+        </div>
         <button
           onClick={closeMenu}
-          className="p-2 rounded-full bg-gray-200/50 hover:bg-gray-300/50 transition-colors duration-300"
+          className="p-2 rounded-lg border border-[#2f3031] bg-[#111214] text-[#9c9c9d] hover:text-white hover:bg-white/[0.04] transition-colors"
+          aria-label="Close menu"
         >
           <svg
-            className="w-6 h-6 text-gray-700"
+            className="w-5 h-5"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -45,14 +52,38 @@ const MobileMenu = ({ isMenuOpen, closeMenu }) => {
         </button>
       </div>
 
+      <div className="space-y-4">
+        <a
+          href="#capabilities"
+          onClick={closeMenu}
+          className="block py-2 text-base font-medium text-[#9c9c9d] hover:text-white transition-colors"
+        >
+          Capabilities
+        </a>
+        <a
+          href="#workflow"
+          onClick={closeMenu}
+          className="block py-2 text-base font-medium text-[#9c9c9d] hover:text-white transition-colors"
+        >
+          Workflow
+        </a>
+        <a
+          href="#security"
+          onClick={closeMenu}
+          className="block py-2 text-base font-medium text-[#9c9c9d] hover:text-white transition-colors"
+        >
+          Security
+        </a>
+      </div>
+
       <motion.div
         variants={linkVariants}
-        transition={{ delay: 0.4 }}
-        className="mt-auto pt-6 border-t border-gray-300/50 space-y-4"
+        transition={{ delay: 0.2 }}
+        className="mt-auto pt-6 border-t border-[#1b1c1e] space-y-3"
       >
         <Link
           href="/login"
-          className="block px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-lg font-medium rounded-xl text-center transition-all duration-300 transform hover:scale-105"
+          className="block w-full py-3 bg-[#e6e6e6] text-[#07080a] hover:bg-white text-sm font-semibold rounded-lg text-center transition-all shadow-sm"
           onClick={closeMenu}
         >
           Sign in

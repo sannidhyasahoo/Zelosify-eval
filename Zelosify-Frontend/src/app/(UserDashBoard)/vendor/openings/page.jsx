@@ -133,43 +133,43 @@ export default function VendorOpeningsPage() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <div className="rounded-card border border-border/80 bg-card shadow-key overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-muted/40 border-b border-border text-muted-foreground font-medium">
-                    <th className="py-3 px-4">Role</th>
-                    <th className="py-3 px-4">Location</th>
-                    <th className="py-3 px-4">Experience</th>
-                    <th className="py-3 px-4">Contract Type</th>
-                    <th className="py-3 px-4">Hiring Manager</th>
-                    <th className="py-3 px-4">Posted Date</th>
-                    <th className="py-3 px-4 text-right">Action</th>
+                  <tr className="bg-muted/40 border-b border-border/70 text-muted-foreground font-medium">
+                    <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Role</th>
+                    <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Location</th>
+                    <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Experience</th>
+                    <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Contract Type</th>
+                    <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Hiring Manager</th>
+                    <th className="py-3 px-4 font-mono text-[11px] uppercase tracking-wider">Posted Date</th>
+                    <th className="py-3 px-4 text-right font-mono text-[11px] uppercase tracking-wider">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-y divide-border/40">
                   {openings.map((opening) => (
                     <tr
                       key={opening.id}
-                      className="hover:bg-muted/20 transition-colors group cursor-pointer"
+                      className="hover:bg-muted/30 transition-colors group cursor-pointer"
                       onClick={() => {
                         router.push(`/vendor/openings/${opening.id}`);
                       }}
                     >
-                      <td className="py-3.5 px-4 font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-foreground group-hover:text-white transition-colors">
                         <div className="max-w-xs truncate">{opening.title}</div>
                         {Array.isArray(opening.requiredSkills) && opening.requiredSkills.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {opening.requiredSkills.slice(0, 3).map((s, idx) => (
                               <span
                                 key={idx}
-                                className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-muted text-muted-foreground border border-border/50"
+                                className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted text-muted-foreground border border-border/50"
                               >
                                 {s}
                               </span>
                             ))}
                             {opening.requiredSkills.length > 3 && (
-                              <span className="text-[10px] text-muted-foreground">
+                              <span className="text-[10px] text-muted-foreground font-mono">
                                 +{opening.requiredSkills.length - 3}
                               </span>
                             )}
@@ -182,7 +182,7 @@ export default function VendorOpeningsPage() {
                           <span>{opening.location || "Remote"}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap font-mono">
                         <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 shrink-0" />
                           <span>
@@ -212,7 +212,7 @@ export default function VendorOpeningsPage() {
                         <Link
                           href={`/vendor/openings/${opening.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center text-xs font-medium text-foreground hover:text-blue-600 dark:hover:text-blue-400 gap-1 group-hover:translate-x-0.5 transition-all"
+                          className="inline-flex items-center text-xs font-medium text-foreground hover:text-white gap-1 group-hover:translate-x-0.5 transition-all"
                         >
                           <span>View Role</span>
                           <ChevronRight className="w-3.5 h-3.5" />

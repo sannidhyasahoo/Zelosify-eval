@@ -57,35 +57,11 @@ const Header = memo(({ isSidebarOpen }) => {
       } h-16 flex items-center justify-between sticky top-0 z-40 bg-background border-b border-border`}
     >
       <div className="flex items-center justify-end px-6 w-full">
-        {/* <div className="flex items-center gap-4 flex-1">
-          <div className="hidden md:flex items-center max-w-md flex-1">
-            <div className="relative w-full">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="pl-8 pr-4 py-2 w-full border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-          </div>
-        </div> */}
-
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-muted/60 border border-border/70 text-[11px] font-mono text-muted-foreground">
             <span className="w-1.5 h-1.5 rounded-full bg-[#59d499]"></span>
             <span>Live Session</span>
           </div>
-
-          {/* Bell Icon to Open Notifications */}
-          {/* <div className="relative">
-            <button
-              onClick={toggleNotifications}
-              className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
-            </button>
-          </div> */}
 
           <UserProfile
             toggleNotifications={toggleNotifications}

@@ -1,134 +1,83 @@
 "use client";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
-export default function notFound({ error }) {
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { Button } from "@/components/UI/shadcn/button";
+
+export default function ErrorBoundary({ error, reset }) {
   const router = useRouter();
+
   useEffect(() => {
-    console.error("User sub-route error:", error);
+    console.error("[Zelosify Global Error]:", error);
   }, [error]);
 
   return (
-    <div className="min-h-screen w-full bg-white dark:bg-gray-900 flex flex-col relative overflow-hidden">
-      <header className="py-5 px-4 border-b border-gray-200 dark:border-gray-700 relative z-10">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          {/* light logo */}
-          <img
-            onClick={() => router.push("/")}
-            src={"/assets/logos/zelosify_Dark.png"}
-            alt="Zelosify Light Logo"
-            width={120}
-            height={40}
-            className="block dark:hidden hover:cursor-pointer object-contain"
-          />
-          {/* dark logo */}
-          <img
-            onClick={() => router.push("/")}
-            src={"/assets/logos/main-logo.png"}
-            alt="Zelosify Dark Logo"
-            width={120}
-            height={40}
-            className="hidden dark:block hover:cursor-pointer object-contain"
-          />
+    <div className="min-h-screen w-full bg-background text-foreground flex flex-col relative overflow-hidden selection:bg-coral/30 selection:text-white">
+      {/* Atmosphere glow */}
+      <div className="pointer-events-none absolute inset-0 bg-hero-glow opacity-50" />
+
+      {/* Header */}
+      <header className="relative z-10 py-5 px-6 border-b border-border/80 bg-background/60 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-2">
+            <img
+              src="/assets/logos/main-logo.png"
+              alt="Zelosify"
+              className="h-7 w-auto object-contain"
+            />
+          </Link>
+          <span className="font-mono text-[11px] text-coral uppercase tracking-wider">
+            System Fault
+          </span>
         </div>
       </header>
 
-      <main className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-max mx-auto text-center">
-          <p className="text-base font-bold text-black dark:text-white">404</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl">
-            Page not found
+      {/* Main Content */}
+      <main className="relative z-10 flex-grow flex items-center justify-center px-4 py-16">
+        <div className="w-full max-w-md rounded-card-lg border border-border/80 bg-card p-8 text-center shadow-float">
+          <div className="mx-auto mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-coral/10 border border-coral/30 text-[11px] font-mono text-coral">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Unexpected Application State</span>
+          </div>
+
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            An error occurred
           </h1>
-          <p className="mt-4 text-base text-gray-500 dark:text-gray-400">
-            Sorry, we couldn't find the page you're looking for.
+          <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            {error?.message || "An unexpected error occurred during data processing. Your session remains secure."}
           </p>
-          <div className="mt-6">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center rounded-md border border-black dark:border-white bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-black dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+
+          <div className="mt-6 flex items-center justify-center gap-3">
+            {reset && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => reset()}
+                className="gap-1.5 text-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Retry Action</span>
+              </Button>
+            )}
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => router.push("/")}
+              className="gap-1.5 text-xs"
             >
-              Go back
-            </button>
+              <Home className="w-3.5 h-3.5" />
+              <span>Workspace Home</span>
+            </Button>
           </div>
         </div>
       </main>
 
-      <footer className="py-4 px-4 border-t border-gray-200 dark:border-gray-700 relative z-10">
-        <div className="max-w-7xl mx-auto text-center text-sm text-gray-500 dark:text-gray-400">
-          © {new Date().getFullYear()} Zelosify. All rights reserved.
-        </div>
+      {/* Footer */}
+      <footer className="relative z-10 py-4 px-6 border-t border-border/80 bg-background/60 text-center font-mono text-[11px] text-muted-foreground">
+        © {new Date().getFullYear()} Zelosify. All rights reserved.
       </footer>
-
-      {/* Gradient and decorative elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gray-100 dark:bg-gray-900" />
-        <svg
-          className="absolute top-0 left-0 transform -translate-y-16 -translate-x-1/2 lg:top-0 lg:left-auto lg:right-0 lg:translate-x-1/2 lg:translate-y-1/3"
-          width="404"
-          height="384"
-          fill="none"
-          viewBox="0 0 404 384"
-          aria-hidden="true"
-        >
-          <defs>
-            <pattern
-              id="64e643ad-2176-4f86-b3d7-f2c5da3b6a6d"
-              x="0"
-              y="0"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="4"
-                height="4"
-                className="text-gray-200 dark:text-gray-700"
-                fill="currentColor"
-              />
-            </pattern>
-          </defs>
-          <rect
-            width="404"
-            height="384"
-            fill="url(#64e643ad-2176-4f86-b3d7-f2c5da3b6a6d)"
-          />
-        </svg>
-        <svg
-          className="absolute bottom-0 right-0 transform translate-y-1/3 translate-x-1/4 lg:top-1/3 lg:left-0 lg:-translate-x-1/2 lg:translate-y-0"
-          width="404"
-          height="384"
-          fill="none"
-          viewBox="0 0 404 384"
-          aria-hidden="true"
-        >
-          <defs>
-            <pattern
-              id="64e643ad-2176-4f86-b3d7-f2c5da3b6a6d"
-              x="0"
-              y="0"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="4"
-                height="4"
-                className="text-gray-200 dark:text-gray-700"
-                fill="currentColor"
-              />
-            </pattern>
-          </defs>
-          <rect
-            width="404"
-            height="384"
-            fill="url(#64e643ad-2176-4f86-b3d7-f2c5da3b6a6d)"
-          />
-        </svg>
-      </div>
     </div>
   );
 }
