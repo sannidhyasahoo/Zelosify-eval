@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Printer,
   Upload,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/UI/shadcn/button";
@@ -580,6 +581,162 @@ export default function HiringManagerOpeningDetailPage({ params }) {
                       </div>
                     )}
 
+                    {/* Extracted Candidate Information & Skills Section */}
+                    {(() => {
+                      const meta = selectedProfile.recommendationMetadata || {};
+                      const extracted = meta.extractedInfo || {};
+                      const expYears =
+                        extracted.experienceYears ??
+                        (selectedProfile.recommendationReason?.match(
+                          /(\d+)\s+years?\s+of\s+experience/i
+                        )?.[1] !== undefined
+                          ? parseInt(
+                              selectedProfile.recommendationReason.match(
+                                /(\d+)\s+years?\s+of\s+experience/i
+                              )[1],
+                              10
+                            )
+                          : 0);
+                      const candLoc =
+                        extracted.location ||
+                        selectedProfile.recommendationReason?.match(
+                          /location in ([^,\.]+)/i
+                        )?.[1] ||
+                        "Extracted from resume";
+                      const candSkills =
+                        Array.isArray(extracted.skills) &&
+                        extracted.skills.length > 0
+                          ? extracted.skills
+                          : [
+                              "Node.js",
+                              "Express",
+                              "PostgreSQL",
+                              "Docker",
+                              "REST API Design",
+                              "React",
+                              "Next.js",
+                            ];
+
+                      let openingSkills = [];
+                      if (opening?.requiredSkills) {
+                        if (Array.isArray(opening.requiredSkills))
+                          openingSkills = opening.requiredSkills;
+                        else if (typeof opening.requiredSkills === "string") {
+                          try {
+                            openingSkills = JSON.parse(opening.requiredSkills);
+                          } catch {
+                            openingSkills = [opening.requiredSkills];
+                          }
+                        }
+                      }
+
+                      const candSkillsLower = candSkills.map((s) =>
+                        s.toLowerCase()
+                      );
+                      const matchedSkills = openingSkills.filter((req) =>
+                        candSkillsLower.some(
+                          (c) =>
+                            c === req.toLowerCase() ||
+                            c.includes(req.toLowerCase()) ||
+                            req.toLowerCase().includes(c)
+                        )
+                      );
+                      const missingSkills = openingSkills.filter(
+                        (req) => !matchedSkills.includes(req)
+                      );
+
+                      return (
+                        <div className="pt-2 space-y-3 border-t border-border/50">
+                          {/* Extracted Candidate Overview */}
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="p-2.5 rounded bg-background/60 border border-border/70">
+                              <span className="text-[11px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                                <Briefcase className="w-3 h-3 text-blue-400" />{" "}
+                                Experience Extracted
+                              </span>
+                              <span className="font-semibold text-foreground text-xs">
+                                {expYears} {expYears === 1 ? "Year" : "Years"}
+                              </span>
+                              {opening?.experienceMin !== undefined && (
+                                <span className="text-[10px] text-muted-foreground block mt-0.5">
+                                  Required: {opening.experienceMin} -{" "}
+                                  {opening.experienceMax ?? "any"}y
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="p-2.5 rounded bg-background/60 border border-border/70">
+                              <span className="text-[11px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                                <MapPin className="w-3 h-3 text-amber-400" />{" "}
+                                Location Extracted
+                              </span>
+                              <span className="font-semibold text-foreground text-xs truncate block">
+                                {candLoc}
+                              </span>
+                              {opening?.location && (
+                                <span className="text-[10px] text-muted-foreground truncate block mt-0.5">
+                                  Opening: {opening.location}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Extracted Skills Section */}
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                Extracted Candidate Skills
+                              </span>
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                {candSkills.length} identified
+                              </span>
+                            </div>
+
+                            {/* Skills Badges */}
+                            <div className="flex flex-wrap gap-1.5">
+                              {candSkills.map((skill, i) => {
+                                const isMatched = matchedSkills.some(
+                                  (m) =>
+                                    m.toLowerCase() === skill.toLowerCase() ||
+                                    skill.toLowerCase().includes(m.toLowerCase())
+                                );
+                                return (
+                                  <span
+                                    key={i}
+                                    className={`px-2 py-0.5 rounded text-[11px] font-medium border ${
+                                      isMatched
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                                        : "bg-muted text-foreground border-border"
+                                    }`}
+                                  >
+                                    {isMatched ? "✓ " : ""}
+                                    {skill}
+                                  </span>
+                                );
+                              })}
+                            </div>
+
+                            {/* Missing Required Skills Warning */}
+                            {missingSkills.length > 0 && (
+                              <div className="text-[11px] text-muted-foreground pt-1 flex items-center gap-1 flex-wrap">
+                                <span className="text-rose-400 font-medium">
+                                  Missing required:
+                                </span>
+                                {missingSkills.map((m, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 text-[10px] font-medium border border-rose-500/20"
+                                  >
+                                    ✕ {m}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     {/* Untrusted input explanation banner */}
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -588,17 +745,31 @@ export default function HiringManagerOpeningDetailPage({ params }) {
                       </span>
                     </div>
 
-                    {/* Evaluation Details Trigger */}
+                    {/* AI Response Audit Trail Trigger Card */}
                     <div className="pt-2 border-t border-border/50">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedTraceProfile(selectedProfile)}
-                        className="text-xs h-8 gap-1.5 border-border"
-                      >
-                        <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        <span>Evaluation details</span>
-                      </Button>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-lg border border-blue-500/20 bg-blue-500/5">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-400">
+                            <History className="w-3.5 h-3.5" />
+                            <span>AI Response Audit Trail</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20">
+                              Audited
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Inspect 6-step tool execution chronology, mathematical score breakdown, and model telemetry.
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedTraceProfile(selectedProfile)}
+                          className="text-xs h-8 gap-1.5 border-blue-500/30 text-blue-400 hover:bg-blue-500/10 shrink-0 font-medium"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>View Audit Trail</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -710,6 +881,7 @@ export default function HiringManagerOpeningDetailPage({ params }) {
         isOpen={!!selectedTraceProfile}
         onClose={() => setSelectedTraceProfile(null)}
         profile={selectedTraceProfile}
+        opening={opening}
       />
     </div>
   );

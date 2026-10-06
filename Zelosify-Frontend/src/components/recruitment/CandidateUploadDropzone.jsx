@@ -88,28 +88,54 @@ export default function CandidateUploadDropzone({
 
     try {
       // Step 1: Call Presign endpoint
-      const filesToPresign = fileQueue.map((item) => ({
-        filename: item.file.name,
-        contentType: item.file.type || "application/pdf",
-        sizeBytes: item.file.size,
-      }));
+      const filesToPresign = fileQueue.map((item) => {
+        const lowerName = item.file.name.toLowerCase();
+        let contentType = "application/pdf";
+        if (lowerName.endsWith(".pptx")) {
+          contentType =
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        } else if (lowerName.endsWith(".pdf")) {
+          contentType = "application/pdf";
+        } else if (item.file.type) {
+          contentType = item.file.type;
+        }
+
+        return {
+          filename: item.file.name,
+          contentType,
+          sizeBytes: item.file.size,
+        };
+      });
 
       const presignResponse = await presignCandidateProfiles(openingId, filesToPresign);
-      const presignItems = presignResponse.data || [];
+      const presignItems = Array.isArray(presignResponse?.data)
+        ? presignResponse.data
+        : Array.isArray(presignResponse)
+        ? presignResponse
+        : [];
 
       if (!presignItems || presignItems.length === 0) {
         throw new Error("No presigned URLs returned from server.");
       }
 
-      // Map presign results to files
+      // Map presign results to files using both originalFilename and sanitized filename
       const presignMap = new Map();
       presignItems.forEach((p) => {
-        presignMap.set(p.filename, p);
+        if (p.originalFilename) presignMap.set(p.originalFilename, p);
+        if (p.filename) presignMap.set(p.filename, p);
       });
 
       // Step 2: Upload each file directly to S3 via PUT (NOT via Express)
-      const uploadPromises = fileQueue.map(async (queueItem) => {
-        const presignedData = presignMap.get(queueItem.file.name);
+      const uploadPromises = fileQueue.map(async (queueItem, idx) => {
+        const presignedData =
+          presignMap.get(queueItem.file.name) ||
+          presignItems.find(
+            (p) =>
+              p.originalFilename === queueItem.file.name ||
+              p.filename === queueItem.file.name
+          ) ||
+          presignItems[idx];
+
         if (!presignedData || !presignedData.uploadUrl) {
           throw new Error(`Failed to get presigned URL for ${queueItem.file.name}`);
         }
@@ -132,7 +158,8 @@ export default function CandidateUploadDropzone({
                 item.id === queueItem.id ? { ...item, progress: percent } : item
               )
             );
-          }
+          },
+          presignedData.contentType || queueItem.file.type || "application/pdf"
         );
 
         setFileQueue((prev) =>
@@ -146,7 +173,7 @@ export default function CandidateUploadDropzone({
         return {
           originalFilename: queueItem.file.name,
           s3Key: presignedData.s3Key,
-          contentType: queueItem.file.type || "application/pdf",
+          contentType: presignedData.contentType || queueItem.file.type || "application/pdf",
           sizeBytes: queueItem.file.size,
         };
       });

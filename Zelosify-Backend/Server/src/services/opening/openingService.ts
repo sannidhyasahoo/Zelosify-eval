@@ -166,7 +166,7 @@ export class OpeningService {
       prisma.opening.findMany({
         where: {
           tenantId,
-          hiringManagerId, // Strict resource ownership in DB query
+          hiringManagerId,
         },
         skip,
         take: limit,
@@ -201,7 +201,7 @@ export class OpeningService {
       prisma.opening.count({
         where: {
           tenantId,
-          hiringManagerId,
+          ...managerCondition,
         },
       }),
     ]);

@@ -52,11 +52,19 @@ export async function submitCandidateProfiles(openingId, profiles) {
  * Directly upload a file buffer/blob to the S3 presigned PUT URL
  * NOTE: This does NOT route through Express.
  */
-export async function uploadFileToS3(uploadUrl, file, onProgress) {
+export async function uploadFileToS3(uploadUrl, file, onProgress, contentType) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", uploadUrl, true);
-    xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+
+    const resolvedType =
+      contentType ||
+      file.type ||
+      (file.name?.toLowerCase().endsWith(".pptx")
+        ? "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        : "application/pdf");
+
+    xhr.setRequestHeader("Content-Type", resolvedType);
 
     if (xhr.upload && onProgress) {
       xhr.upload.onprogress = (event) => {

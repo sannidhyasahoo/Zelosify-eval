@@ -1,91 +1,76 @@
-# Zelosify-Backend
+# Zelosify Backend — Multi-Tenant AI Recruitment API Server
 
-## Getting started
+The core Node.js, Express, and TypeScript backend server for **Zelosify Recruit**, orchestrating identity management via Keycloak, multi-tenant relational persistence via Prisma/PostgreSQL, S3 presigned upload generation, and candidate evaluation via LangGraph.
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+---
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Quickstart
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+### 1. Start Infrastructure (PostgreSQL & Keycloak)
+```bash
+cd Server
+docker compose up -d
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/zelosify1/zelosify-backend.git
-git branch -M main
-git push -uf origin main
+* **PostgreSQL 18**: `localhost:5445`
+* **Keycloak 26.1**: `localhost:8080/auth`
+
+### 2. Environment Configuration
+Verify `Server/.env` (see `.env.example` for reference):
+```ini
+DATABASE_URL="postgresql://postgres:testrun@localhost:5445/zelosify_recruit_test?schema=app"
+PORT=5000
+FRONTEND_URL="http://localhost:5173"
+KEYCLOAK_URL="http://localhost:8080/auth"
 ```
 
-## Integrate with your tools
+### 3. Install Dependencies & Initialize Database
+```bash
+npm install
+npm run prisma:generate
+npm run prisma:deploy
+```
 
-- [ ] [Set up project integrations](https://gitlab.com/zelosify/zelosify-backend/-/settings/integrations)
+### 4. Seed Bruce Wayne Corp Openings & Test Accounts
+```bash
+npm run seed
+```
+This runs both opening provisioning (12+ positions) and Keycloak/DB user credential synchronization.
 
-## Collaborate with your team
+### 5. Start Development Server
+```bash
+npm run dev
+```
+Server runs at [http://localhost:5000](http://localhost:5000).
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+---
 
-## Test and Deploy
+## Automated Test Suites
 
-Use the built-in continuous integration in GitLab.
+```bash
+# Run 88+ unit tests (scoring formula, boundaries, normalization, security)
+npm test -- --run
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+# Run full Phase 7 verification & 100-profile performance benchmark
+npm run test:phase7
 
-***
+# Run E2E API verification
+npm run test:e2e
+```
 
-# Editing this README
+---
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Key Modules in `src/`
 
-## Suggestions for a good README
+* `routers/`: Express routers organized by domain (`vendor`, `hiring`, `auth`, `aws`)
+* `controllers/`: HTTP request validation, response formatting, and service delegation
+* `services/recommendation/`:
+  * `agentGraph.ts`: LangGraph tool-calling state machine
+  * `recommendationTools.ts`: Tool registry (`parse_resume`, `extract_features`, `normalize_skills`, `calculate_match_score`)
+  * `scoringService.ts`: Pure deterministic scoring engine & decision policy
+  * `recommendationDispatcher.ts`: Non-blocking async queue with concurrency limits
+  * `resumeParser.ts`: PDF & PPTX parsing with prompt injection neutralization
+* `services/opening/`: Opening query filters, candidate presigning, and atomic submission
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+> For complete end-to-end documentation, test credentials, and architecture diagrams, please refer to the [Root README](../README.md).

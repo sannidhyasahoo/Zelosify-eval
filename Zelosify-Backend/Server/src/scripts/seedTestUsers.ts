@@ -9,6 +9,11 @@ dotenv.config();
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://localhost:8080/auth";
 const REALM = process.env.KEYCLOAK_REALM || "Zelosify";
 
+if (process.env.NODE_ENV === "production") {
+  console.error("❌ Refusing to seed test users in production environment!");
+  process.exit(1);
+}
+
 interface TestUserDef {
   username: string;
   email: string;

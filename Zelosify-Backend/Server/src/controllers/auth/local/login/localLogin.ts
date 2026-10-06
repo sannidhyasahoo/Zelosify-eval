@@ -42,6 +42,7 @@ export const verifyLogin = async (
         department: true,
         provider: true,
         tenantId: true,
+        totpSecret: true,
       },
     });
 
@@ -59,110 +60,150 @@ export const verifyLogin = async (
 
     const clientSecret = await getKeycloakClientSecret();
 
-    console.log("🔹 Attempting Keycloak login with:", user.email);
+    console.log("🔹 Attempting Keycloak login with:", user.username || user.email);
 
+    let tokenResponse;
     try {
-      const tokenResponse = await axios.post(
+      const primaryUsername = user.username || user.email;
+      tokenResponse = await axios.post(
         `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`,
         new URLSearchParams({
           grant_type: "password",
           client_id: process.env.KEYCLOAK_CLIENT_ID!,
           client_secret: clientSecret,
-          username: user.email,
+          username: primaryUsername,
           password,
         }),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
-
-      // Special handling for seeded users (user0, user1, etc.)
-      // lines 403-446
-      if (user.username && /^user\d+$/.test(user.username)) {
-        console.log(
-          `🔹 Detected seeded user ${user.username}, bypassing TOTP verification`
+    } catch (err: any) {
+      if (user.email && user.email !== user.username) {
+        try {
+          tokenResponse = await axios.post(
+            `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`,
+            new URLSearchParams({
+              grant_type: "password",
+              client_id: process.env.KEYCLOAK_CLIENT_ID!,
+              client_secret: clientSecret,
+              username: user.email,
+              password,
+            }),
+            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+          );
+        } catch (fallbackErr: any) {
+          console.error(
+            "❌ Keycloak authentication failed:",
+            fallbackErr.response?.data || fallbackErr.message
+          );
+          res.status(401).json({ message: "Invalid credentials" });
+          return;
+        }
+      } else {
+        console.error(
+          "❌ Keycloak authentication failed:",
+          err.response?.data || err.message
         );
-
-        // Extract tokens from Keycloak response
-        const { access_token, refresh_token } = tokenResponse.data;
-
-        // Update user's tokens in the database
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            accessToken: access_token,
-            refreshToken: refresh_token,
-          },
-        });
-
-        // Set access token in cookie
-        res.cookie("access_token", access_token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 4 * 3600 * 1000, // 4 hours
-          path: "/",
-        });
-
-        // Set refresh token in cookie
-        res.cookie("refresh_token", refresh_token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-          path: "/",
-        });
-
-        // Send the response using proper interface
-        const successResponse: LoginSuccessResponse = {
-          success: true,
-          message: "Authentication successful",
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            phoneNumber: user.phoneNumber,
-            role: user.role,
-            department: user.department,
-            provider: user.provider,
-            tenantId: user.tenantId,
-          },
-          redirectTo: "/user", // Redirect to user page
-        };
-
-        res.json(successResponse);
-        return; // Just return without value to satisfy Promise<void>
+        res.status(401).json({ message: "Invalid credentials" });
+        return;
       }
+    }
 
-      // Normal flow for non-seeded users (existing code)
-      // Store the refresh token securely
-      const refreshToken = tokenResponse.data.refresh_token;
+    // Complete direct login for accounts without TOTP configured; enforce 2FA when totpSecret is set
+    const bypassTOTP = !user.totpSecret;
 
-      // Generate a temporary token that includes the refresh token
-      const tempToken = generateTempToken(user.id, refreshToken);
+    if (bypassTOTP) {
+      console.log(
+        `🔹 User ${user.username || user.email} logging in directly (no 2FA secret configured)`
+      );
 
-      // Store tempToken in cookies
-      res.cookie("temp_token", tempToken, {
+      // Extract tokens from Keycloak response
+      const { access_token, refresh_token } = tokenResponse.data;
+
+      // Update user's tokens in the database
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          accessToken: access_token,
+          refreshToken: refresh_token,
+        },
+      });
+
+      // Set access token in cookie
+      res.cookie("access_token", access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 5 * 60 * 1000, // 5 minutes
+        sameSite: "lax",
+        maxAge: 4 * 3600 * 1000, // 4 hours
         path: "/",
       });
 
-      const totpResponse: LoginTOTPRequiredResponse = {
-        message: "Login verified. Please enter your TOTP code.",
+      // Set refresh token in cookie
+      res.cookie("refresh_token", refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: "/",
+      });
+
+      // Set role cookie for immediate client/middleware access
+      if (user.role) {
+        res.cookie("role", user.role, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 4 * 3600 * 1000,
+          path: "/",
+        });
+      }
+
+      const redirectPath =
+        user.role === "HIRING_MANAGER"
+          ? "/hiring-manager/openings"
+          : user.role === "IT_VENDOR"
+          ? "/vendor/openings"
+          : "/user";
+
+      // Send the response using proper interface
+      const successResponse: LoginSuccessResponse = {
+        success: true,
+        message: "Authentication successful",
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          department: user.department,
+          provider: user.provider,
+          tenantId: user.tenantId,
+        },
+        redirectTo: redirectPath,
       };
 
-      res.json(totpResponse);
-    } catch (error: any) {
-      console.error(
-        "❌ Keycloak authentication failed:",
-        error.response?.data || error.message
-      );
-      res.status(401).json({ message: "Invalid credentials" });
+      res.json(successResponse);
       return;
     }
+
+    // Normal flow for users with TOTP configured
+    const refreshToken = tokenResponse.data.refresh_token;
+    const tempToken = generateTempToken(user.id, refreshToken);
+
+    res.cookie("temp_token", tempToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 5 * 60 * 1000, // 5 minutes
+      path: "/",
+    });
+
+    const totpResponse: LoginTOTPRequiredResponse = {
+      message: "Login verified. Please enter your TOTP code.",
+    };
+
+    res.json(totpResponse);
   } catch (error) {
     console.error("❌ Error verifying login:", error);
     res.status(500).json({ message: "Internal server error" });

@@ -74,9 +74,21 @@ export default function LoginLayout() {
           ) {
             // Move to TOTP verification stage
             setLoginStage("totp");
-          } else if (resultAction.message === "Authentication successful") {
-            // Let middleware handle the role-based redirect
-            window.location.replace("/login"); // This will trigger middleware redirect
+          } else if (
+            resultAction.message === "Authentication successful" ||
+            resultAction.user
+          ) {
+            const role = resultAction.user?.role;
+            const target =
+              role === "HIRING_MANAGER"
+                ? "/hiring-manager/openings"
+                : role === "IT_VENDOR"
+                ? "/vendor/openings"
+                : resultAction.redirectTo || "/login";
+
+            setTimeout(() => {
+              window.location.href = target;
+            }, 300);
           }
         } catch (err) {
           console.error("Login verification error:", err);
@@ -95,20 +107,17 @@ export default function LoginLayout() {
 
           // Ensure we redirect properly regardless of the exact message
           if (resultAction.user) {
-            console.log(
-              "Authentication successful, letting middleware handle redirect..."
-            );
+            const role = resultAction.user?.role;
+            const target =
+              role === "HIRING_MANAGER"
+                ? "/hiring-manager/openings"
+                : role === "IT_VENDOR"
+                ? "/vendor/openings"
+                : resultAction.redirectTo || "/login";
 
-            // Force a small delay to ensure cookies are set
             setTimeout(() => {
-              // Let middleware handle the role-based redirect
-              try {
-                window.location.replace("/login"); // This will trigger middleware redirect
-              } catch (e) {
-                console.error("Redirect failed with replace, trying href:", e);
-                window.location.href = "/login"; // This will trigger middleware redirect
-              }
-            }, 500);
+              window.location.href = target;
+            }, 300);
           }
         } catch (err) {
           console.error("TOTP verification error:", err);

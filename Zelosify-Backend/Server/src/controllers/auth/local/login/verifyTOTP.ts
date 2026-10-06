@@ -54,11 +54,13 @@ export const verifyTOTP = async (
       return;
     }
 
-    // Verify TOTP
-    const isValidTOTP = authenticator.verify({
-      token: totp,
-      secret: user.totpSecret!,
-    });
+    // Verify TOTP with user secret
+    const isValidTOTP = user.totpSecret
+      ? authenticator.verify({
+          token: totp,
+          secret: user.totpSecret,
+        })
+      : false;
 
     if (!isValidTOTP) {
       res.status(401).json({ message: "Invalid TOTP code" });
@@ -84,7 +86,7 @@ export const verifyTOTP = async (
       res.cookie("access_token", tokenResponse.data.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 4 * 3600 * 1000, // 4 hours
         path: "/",
       });
@@ -92,10 +94,21 @@ export const verifyTOTP = async (
       res.cookie("refresh_token", tokenResponse.data.refresh_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
         path: "/",
       });
+
+      // Set role cookie for immediate client/middleware access
+      if (user.role) {
+        res.cookie("role", user.role, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 4 * 3600 * 1000,
+          path: "/",
+        });
+      }
 
       // Clear the temporary token
       res.clearCookie("temp_token");
@@ -103,10 +116,18 @@ export const verifyTOTP = async (
       // Remove sensitive data before sending user info
       const { totpSecret, ...userData } = user;
 
+      const redirectPath =
+        user.role === "HIRING_MANAGER"
+          ? "/hiring-manager/openings"
+          : user.role === "IT_VENDOR"
+          ? "/vendor/openings"
+          : "/user";
+
       // Send the final response
       res.json({
         message: "TOTP verified successfully. Login successful.",
         user: userData,
+        redirectTo: redirectPath,
       });
     } catch (error: any) {
       console.error(

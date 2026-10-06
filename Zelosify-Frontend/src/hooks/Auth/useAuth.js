@@ -30,10 +30,15 @@ const useAuth = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Helper function to check if current path is an auth page
+  // Helper function to check if current path is an auth entry page
   const isAuthPage = () => {
     if (!pathname) return false;
-    return !pathname.includes("/user");
+    return (
+      pathname === "/login" ||
+      pathname === "/register" ||
+      pathname === "/setup-totp" ||
+      pathname.startsWith("/auth")
+    );
   };
 
   // Check if we need to load user data from localStorage on initial mount

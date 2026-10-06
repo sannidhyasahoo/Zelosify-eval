@@ -114,9 +114,9 @@ export function createRecommendationTools(ctx: ToolContext) {
         openingRequirements: z
           .object({
             experienceMin: z.number().optional(),
-            experienceMax: z.number().nullable().optional(),
+            experienceMax: z.number().optional(),
             requiredSkills: z.array(z.string()).optional(),
-            location: z.string().nullable().optional(),
+            location: z.string().optional(),
           })
           .optional()
           .describe("Target opening requirements"),
@@ -194,7 +194,6 @@ export function createRecommendationTools(ctx: ToolContext) {
         minExperience: z.number().describe("Minimum required experience from the opening"),
         maxExperience: z
           .number()
-          .nullable()
           .optional()
           .describe("Maximum required experience from the opening"),
         candidateSkills: z.array(z.string()).describe("Candidate skills"),
@@ -204,7 +203,6 @@ export function createRecommendationTools(ctx: ToolContext) {
         candidateLocation: z.string().describe("Candidate location"),
         openingLocation: z
           .string()
-          .nullable()
           .optional()
           .describe("Opening location"),
       }),
