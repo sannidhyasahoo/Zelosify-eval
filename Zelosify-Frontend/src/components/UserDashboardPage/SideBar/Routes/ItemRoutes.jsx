@@ -5,7 +5,7 @@ import {
   Headset,
   Smile,
   Scale3DIcon,
-  Frown,
+  Briefcase,
 } from "lucide-react";
 import { MdDataUsage } from "react-icons/md";
 
@@ -42,7 +42,14 @@ const getOverviewItemsByRole = (role) => {
     // For IT_VENDOR
     case "IT_VENDOR":
       return [
+        { title: "Openings", href: "/vendor/openings", icon: Briefcase },
         { title: "Payments", href: "/vendor/payments", icon: CreditCard },
+      ];
+
+    // For HIRING_MANAGER
+    case "HIRING_MANAGER":
+      return [
+        { title: "Openings", href: "/hiring-manager/openings", icon: Briefcase },
       ];
 
     default:
