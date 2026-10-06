@@ -1,5 +1,10 @@
-import LoginPage from "@/pages/LandingPage/auth/LoginPage";
+import LoginLayout from "@/components/Auth/Login/LoginLayout";
 
-export default function page() {
-  return <LoginPage />;
+export default function LoginPage() {
+  return (
+    <div className="w-full">
+      <LoginLayout />
+    </div>
+  );
 }
+

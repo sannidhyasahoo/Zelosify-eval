@@ -44,3 +44,16 @@ export const extractRoleFromToken = (token) => {
 
   return businessRoles.length > 0 ? businessRoles[0] : null;
 };
+
+// Check if JWT token is expired (seconds to milliseconds with 10s grace buffer)
+export const isTokenExpired = (token) => {
+  if (!token) return true;
+  try {
+    const decoded = decodeJwt(token);
+    if (!decoded || !decoded.exp) return true;
+    return decoded.exp * 1000 <= Date.now() + 10000;
+  } catch {
+    return true;
+  }
+};
+

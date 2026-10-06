@@ -9,10 +9,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-// Force server-side rendering to prevent static generation issues with Redux
-export async function getServerSideProps() {
-  return {
-    props: {},
-  };
-}

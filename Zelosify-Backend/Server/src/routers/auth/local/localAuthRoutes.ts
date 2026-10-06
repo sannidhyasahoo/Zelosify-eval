@@ -71,9 +71,8 @@ router.post("/verify-totp", wrapHandler(verifyTOTP));
 router.post("/verify-initial-totp", wrapHandler(verifyInitialTOTP));
 
 /**
- * POST /logout - Logout authenticated user
- * Requires authentication middleware to access user session
+ * POST /logout - Logout user and clear session cookies
  */
-router.post("/logout", authenticateUser, wrapProtectedHandler(logout));
+router.post("/logout", wrapHandler(logout));
 
 export default router;

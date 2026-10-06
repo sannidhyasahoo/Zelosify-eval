@@ -1,84 +1,64 @@
-import { Response } from "express";
-import { AuthenticatedRequest } from "../../../types/common.js";
+import { Response, Request } from "express";
 import asyncHandler from "../../../utils/handler/asyncHandler.js";
 import { getAdminToken } from "../../../utils/keycloak/getAdminToken.js";
 import { getClientSecret } from "../../../config/keycloak/keycloak.js";
 import axios from "axios";
 
 export const logout = asyncHandler(
-  async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
-      // Retrieve refresh token from cookies or header.
       const refreshToken =
-        req.cookies.refresh_token || req.headers.authorization?.split(" ")[1];
-      if (!refreshToken) {
-        console.log("⚠️ No refresh token found, already logged out.");
-        res
-          .status(400)
-          .json({ message: "No refresh token found, already logged out" });
-        return;
-      }
-      // Assuming that authentication middleware attaches req.user:
-      // Use type assertion to access req.user
+        req.cookies?.refresh_token || req.headers.authorization?.split(" ")[1];
       const user = (req as any).user;
-      console.log("Logging out user:", user);
+      console.log("Processing logout for user/token...", { hasRefreshToken: !!refreshToken });
 
-      // Check if this is a Keycloak user or OAuth user.
-      if (user && user.provider === "KEYCLOAK") {
-        // For Keycloak users, retrieve the client secret and call Keycloak logout endpoint.
-        const adminToken = await getAdminToken();
-        const clientSecret = await getClientSecret(adminToken);
-        if (!clientSecret) {
-          console.error("Error: CLIENT_SECRET could not be retrieved.");
-          res.status(500).json({ message: "Failed to retrieve CLIENT_SECRET" });
-          return;
-        }
+      if (refreshToken) {
         try {
-          await axios.post(
-            `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/logout`,
-            new URLSearchParams({
-              client_id: process.env.KEYCLOAK_CLIENT_ID!,
-              client_secret: clientSecret,
-              refresh_token: refreshToken,
-            }),
-            { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+          const adminToken = await getAdminToken();
+          const clientSecret = await getClientSecret(adminToken);
+          if (clientSecret) {
+            await axios.post(
+              `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/logout`,
+              new URLSearchParams({
+                client_id: process.env.KEYCLOAK_CLIENT_ID!,
+                client_secret: clientSecret,
+                refresh_token: refreshToken,
+              }),
+              { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+            );
+            console.log("Keycloak session invalidated successfully.");
+          }
+        } catch (kcErr: any) {
+          console.warn(
+            "Keycloak logout request notice (session may already be expired):",
+            kcErr.response?.data || kcErr.message
           );
-          console.log("Keycloak session invalidated for user.");
-        } catch (error: any) {
-          // Type as 'any' for axios error
-          console.error(
-            "Keycloak logout request failed:",
-            error.response?.data || error.message
-          );
-          res.status(500).json({ message: "Error logging out of Keycloak" });
-          return;
         }
-      } else {
-        // For OAuth users (Google/Microsoft), you may not need to call an external logout endpoint.
-        console.log("OAuth user logout: just clearing cookies.");
       }
 
-      // Clear cookies securely
-      res.clearCookie("access_token", {
+      // Always clear cookies securely
+      const cookieOptions = {
         httpOnly: true,
-        secure: true,
-        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax" as const,
         path: "/",
-      });
-      res.clearCookie("refresh_token", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-      });
-      console.log("Cookies cleared successfully.");
+      };
+
+      res.clearCookie("access_token", cookieOptions);
+      res.clearCookie("refresh_token", cookieOptions);
+      res.clearCookie("role", { path: "/" });
+      console.log("Auth cookies cleared successfully.");
 
       res.status(200).json({ message: "Logged out successfully" });
       return;
-    } catch (error) {
-      console.error("Logout error:", error);
-      res.status(500).json({ message: "Error logging out" });
+    } catch (error: any) {
+      console.error("Logout caught error, ensuring cookies cleared:", error.message);
+      res.clearCookie("access_token", { path: "/" });
+      res.clearCookie("refresh_token", { path: "/" });
+      res.clearCookie("role", { path: "/" });
+      res.status(200).json({ message: "Logged out successfully" });
       return;
     }
   }
 );
+

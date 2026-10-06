@@ -127,28 +127,26 @@ const useAuth = () => {
     setLocalState((prevState) => ({ ...prevState, isSigningOut: true }));
 
     try {
-      // Dispatch signOut and wait for it to complete
-      const result = await dispatch(signOut()).unwrap();
+      await dispatch(signOut());
 
-      // Only close the confirmation dialog if not explicitly skipped
       if (!skipConfirmationClose) {
         dispatch(closeSignoutConfirmation());
       }
 
-      // Navigate to login page
-      router.push("/user");
-      return result;
+      // Hard redirect to login to ensure clean cookie and memory state
+      window.location.href = "/login";
     } catch (error) {
-      console.error("Logout error:", error);
+      console.warn("Logout error encountered, enforcing client cleanup:", error);
 
-      // Even if there's an error, close the dialog to avoid keeping it open
+      clearAuthData();
+      dispatch(logout());
+
       if (!skipConfirmationClose) {
         dispatch(closeSignoutConfirmation());
       }
 
-      throw error;
+      window.location.href = "/login";
     } finally {
-      // Reset local signing out state
       setLocalState((prevState) => ({ ...prevState, isSigningOut: false }));
     }
   };
