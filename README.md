@@ -67,16 +67,16 @@ graph TD
         S3Bucket[("AWS S3 Bucket<br/>(zel-recruit)")]
     end
 
-    VendorUI -->|Bearer Token| RoleGuard
-    ManagerUI -->|Bearer Token| RoleGuard
+    VendorUI -->|"Bearer Token"| RoleGuard
+    ManagerUI -->|"Bearer Token"| RoleGuard
     RoleGuard --> VendorRoutes
     RoleGuard --> HiringRoutes
 
-    VendorRoutes -->|Generate Presigned PUT| S3Bucket
-    VendorUI -->|Direct Binary PUT (0 bytes via server)| S3Bucket
-    VendorRoutes -->|Transactional Profile Creation| Postgres
+    VendorRoutes -->|"Generate Presigned PUT"| S3Bucket
+    VendorUI -->|"Direct Binary PUT (0 bytes via server)"| S3Bucket
+    VendorRoutes -->|"Transactional Profile Creation"| Postgres
 
-    VendorRoutes -.->|Non-blocking Dispatch (<50ms)| Dispatcher
+    VendorRoutes -.->|"Non-blocking Dispatch (under 50ms)"| Dispatcher
     Dispatcher --> AgentGraph
 
     AgentGraph --> LLM
@@ -84,15 +84,15 @@ graph TD
     LLM --> ToolFeatures
     LLM --> ToolSkills
     LLM --> ToolScore
-    ToolParser -->|Fetch Stream| S3Bucket
+    ToolParser -->|"Fetch Stream"| S3Bucket
 
     ToolScore --> DecisionPolicy
     LLM --> ZodValidator
     ZodValidator --> DecisionPolicy
-    DecisionPolicy -->|Atomic State Update| Postgres
+    DecisionPolicy -->|"Atomic State Update"| Postgres
 
-    HiringRoutes -->|Read Candidates & Traces| Postgres
-    ManagerUI -->|Shortlist / Reject Mutations| HiringRoutes
+    HiringRoutes -->|"Read Candidates & Traces"| Postgres
+    ManagerUI -->|"Shortlist / Reject Mutations"| HiringRoutes
 ```
 
 ---
@@ -118,7 +118,7 @@ sequenceDiagram
     Vendor->>API: 3. POST /api/vendor/openings/:id/profiles/upload
     API->>DB: 4. Atomic Transaction: create HiringProfile (status=SUBMITTED, recStatus=PENDING)
     API-->>Vendor: HTTP 201 Created (Data Sanitized: No AI Scores Returned)
-    API-)Worker: 5. Enqueue profileId asynchronously (returns to vendor in < 50ms)
+    API->>Worker: 5. Enqueue profileId asynchronously (returns to vendor in under 50ms)
 
     Worker->>DB: 6. Atomic Lock: PENDING/FAILED -> PROCESSING
     Worker->>Agent: 7. Invoke LangGraph recommendation graph
@@ -136,7 +136,7 @@ sequenceDiagram
 
     LLM->>Agent: 12. Generate explanation & confidence
     Agent->>Agent: 13. Zod Schema Validation & Auto-Retry if malformed
-    Agent->>Agent: 14. Deterministic Decision Policy (score >= 0.75 => Recommended)
+    Agent->>Agent: 14. Deterministic Decision Policy (score at or above 0.75 is Recommended)
 
     Agent->>DB: 15. Atomically persist: recStatus=COMPLETED, matchScore, recMetadata
     Manager->>API: 16. GET /api/hiring-manager/openings/:id/profiles
