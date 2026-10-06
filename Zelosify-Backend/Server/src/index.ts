@@ -77,11 +77,13 @@ async function startServer() {
     // AWS integration
     app.use("/api/v1/aws", awsRouter);
 
-    // Handles vendor-specific routes
+    // Handles vendor-specific routes (supporting both /api/v1/vendor and /api/vendor aliases)
     app.use("/api/v1/vendor", vendorRoutes);
+    app.use("/api/vendor", vendorRoutes);
 
-    // Hiring manager routes
+    // Hiring manager routes (supporting both /api/v1/hiring-manager and /api/hiring-manager aliases)
     app.use("/api/v1/hiring-manager", hiringManagerRoutes);
+    app.use("/api/hiring-manager", hiringManagerRoutes);
 
     // Request debugging middleware - logs all incoming requests
     app.use((req, _, next) => {
