@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, Bell } from "lucide-react";
 
 export default function Notification({
   notificationRef,
@@ -7,40 +7,49 @@ export default function Notification({
   return (
     <div
       ref={notificationRef}
-      className="absolute right-6 mt-80 w-80 bg-white dark:bg-gray-900 rounded-md shadow-lg dark:shadow-gray-900/20 border border-border"
+      className="absolute right-6 top-14 z-50 w-80 rounded-card border border-border/80 bg-card shadow-float animate-in fade-in-0 zoom-in-95 duration-150"
     >
-      <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-800">
-        <h3 className="font-medium text-gray-900 dark:text-white">
-          Notifications
-        </h3>
+      <div className="flex items-center justify-between p-3.5 border-b border-border/60">
+        <div className="flex items-center gap-2">
+          <Bell className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-xs font-semibold text-foreground">
+            Notifications
+          </h3>
+        </div>
         <button
           onClick={() => setShowNotifications(false)}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+          className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
-      <div className="max-h-[300px] overflow-y-auto">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className="p-4 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
-            <div className="flex gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-2 h-2 mt-2 bg-blue-500 rounded-full"></div>
-              </div>
-              <div>
-                <p className="text-sm text-gray-800 dark:text-gray-200">
-                  New message from the team
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  2 hours ago
-                </p>
-              </div>
+      <div className="max-h-[280px] overflow-y-auto divide-y divide-border/50 text-xs">
+        <div className="p-3.5 hover:bg-muted/40 transition-colors">
+          <div className="flex gap-2.5">
+            <div className="w-1.5 h-1.5 mt-1.5 bg-[#59d499] rounded-full shrink-0" />
+            <div>
+              <p className="font-medium text-foreground">
+                Session Authenticated
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Connected to Bruce Wayne Corp workspace
+              </p>
             </div>
           </div>
-        ))}
+        </div>
+        <div className="p-3.5 hover:bg-muted/40 transition-colors">
+          <div className="flex gap-2.5">
+            <div className="w-1.5 h-1.5 mt-1.5 bg-muted-foreground/60 rounded-full shrink-0" />
+            <div>
+              <p className="font-medium text-foreground">
+                Operational Telemetry Active
+              </p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                All deterministic matching services online
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

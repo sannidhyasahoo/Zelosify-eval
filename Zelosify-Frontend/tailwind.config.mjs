@@ -1,3 +1,11 @@
+import tailwindcssAnimate from "tailwindcss-animate";
+
+/**
+ * Colors are stored as space-separated RGB channels in globals.css so that
+ * Tailwind opacity modifiers (e.g. `bg-card/60`) work for every token.
+ */
+const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -8,75 +16,117 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          "var(--font-inter)",
+          "system-ui",
+          "-apple-system",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-geist-mono)",
+          "JetBrains Mono",
+          "Menlo",
+          "Monaco",
+          "Courier",
+          "monospace",
+        ],
+      },
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        tertiary: "var(--tertiary)",
-        border: "var(--border)",
-        ring: "var(--ring)",
-        focus: "var(--focus)",
-        chartLine: "var(--chart-line)",
-        tableHeader: "var(--table-header)",
-        scrollBar: "var(--scroll-bar)",
+        background: token("background"),
+        foreground: token("foreground"),
+        tertiary: token("tertiary"),
+        border: token("border"),
+        ring: token("ring"),
+        focus: token("focus"),
+        chartLine: token("chart-line"),
+        tableHeader: token("table-header"),
+        scrollBar: token("scroll-bar"),
+        coral: {
+          DEFAULT: token("coral"),
+          ember: token("ember"),
+        },
+        success: token("success"),
+        info: token("info"),
+        warning: token("warning"),
         card: {
-          DEFAULT: "var(--card)",
-          foreground: "var(--card-foreground)",
+          DEFAULT: token("card"),
+          foreground: token("card-foreground"),
         },
         popover: {
-          DEFAULT: "var(--popover)",
-          foreground: "var(--popover-foreground)",
+          DEFAULT: token("popover"),
+          foreground: token("popover-foreground"),
         },
         primary: {
-          DEFAULT: "var(--primary)",
-          foreground: "var(--primary-foreground)",
+          DEFAULT: token("primary"),
+          foreground: token("primary-foreground"),
         },
         secondary: {
-          DEFAULT: "var(--secondary)",
-          foreground: "var(--secondary-foreground)",
+          DEFAULT: token("secondary"),
+          foreground: token("secondary-foreground"),
         },
         muted: {
-          DEFAULT: "var(--muted)",
-          foreground: "var(--muted-foreground)",
+          DEFAULT: token("muted"),
+          foreground: token("muted-foreground"),
         },
         accent: {
-          DEFAULT: "var(--accent)",
-          foreground: "var(--accent-foreground)",
+          DEFAULT: token("accent"),
+          foreground: token("accent-foreground"),
         },
         destructive: {
-          DEFAULT: "var(--destructive)",
-          foreground: "var(--destructive-foreground)",
+          DEFAULT: token("destructive"),
+          foreground: token("destructive-foreground"),
         },
-        input: "var(--input)",
-        chart1: "var(--chart-1)",
-        chart2: "var(--chart-2)",
-        chart3: "var(--chart-3)",
-        chart4: "var(--chart-4)",
-        chart5: "var(--chart-5)",
-        chart6: "var(--chart-6)",
-        chart7: "var(--chart-7)",
-        chart8: "var(--chart-8)",
-        chart9: "var(--chart-9)",
-        chart10: "var(--chart-10)",
-        chart11: "var(--chart-11)",
-        chart12: "var(--chart-12)",
-        radius: "var(--radius)",
+        input: token("input"),
+        chart1: token("chart-1"),
+        chart2: token("chart-2"),
+        chart3: token("chart-3"),
+        chart4: token("chart-4"),
+        chart5: token("chart-5"),
         sidebar: {
-          DEFAULT: "var(--sidebar-background)",
-          foreground: "var(--sidebar-foreground)",
-          primary: "var(--sidebar-primary)",
-          "primary-foreground": "var(--sidebar-primary-foreground)",
-          accent: "var(--sidebar-accent)",
-          "accent-foreground": "var(--sidebar-accent-foreground)",
-          border: "var(--sidebar-border)",
-          ring: "var(--sidebar-ring)",
+          DEFAULT: token("sidebar-background"),
+          foreground: token("sidebar-foreground"),
+          primary: token("sidebar-primary"),
+          "primary-foreground": token("sidebar-primary-foreground"),
+          accent: token("sidebar-accent"),
+          "accent-foreground": token("sidebar-accent-foreground"),
+          border: token("sidebar-border"),
+          ring: token("sidebar-ring"),
         },
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        card: "16px",
+        "card-lg": "20px",
+      },
+      boxShadow: {
+        // Raycast "keyboard key" treatment: inset top highlight + hairline ring
+        key: "inset 0 1px 0 0 rgba(255,255,255,0.06), inset 0 -1px 0 0 rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05)",
+        "key-hover":
+          "inset 0 1px 0 0 rgba(255,255,255,0.10), inset 0 -1px 0 0 rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.12)",
+        float:
+          "0 4px 40px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 0 rgba(255,255,255,0.06)",
+        glow: "0 0 40px 0 rgba(255,99,99,0.18)",
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+      },
+      animation: {
+        "fade-up": "fade-up 0.35s ease-out both",
+        shimmer: "shimmer 2.2s linear infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 };

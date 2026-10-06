@@ -2,203 +2,286 @@
 @tailwind components;
 @tailwind utilities;
 
-/* light theme */
-:root {
-  --background: #ffffff; /* plain-white */
-  --foreground: #000000; /* plain-black */
-  --primary: #1f2937; /* slate-800 */
-  --secondary: #4b5563; /* gray-600 */
-  --tertiary: #ffffff; /* plain-white */
-  --border: #e2e8f0; /* gray-200 */
-  --ring: #2563eb; /* blue-600 */
-  --focus: #2563eb; /* blue-600 */
-  --chart-line: #000; /* plain-black */
-  --table-header: #f9fafb; /* gray-50 */
-  --scroll-bar: #d1d5db; /* gray-300 */
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary-foreground: 210 40% 98%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: #1f2937; /* slate-800 */
-  --accent: #f3f4f6; /* gray-100 */
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: #dc2626;
-  --chart-1: 220 70% 50%; /* Light Blue */
-  --chart-2: 160 60% 45%; /* Light Green */
-  --chart-3: 30 80% 55%; /* Light Coral */
-  --chart-4: 280 65% 60%; /* Lavender */
-  --chart-5: 340 75% 55%; /* Salmon */
-  --chart-6: 0 100% 50%; /* Red */
-  --chart-7: 120 100% 50%; /* Green */
-  --chart-8: 240 100% 50%; /* Blue */
-  --chart-9: 60 100% 50%; /* Yellow */
-  --chart-10: 300 100% 50%; /* Magenta */
-  --chart-11: 180 100% 50%; /* Cyan */
-  --chart-12: 0 0% 50%; /* Gray */
-  --radius: 0.5rem;
-  --sidebar-background: 0 0% 98%;
-  --sidebar-foreground: 240 5.3% 26.1%;
-  --sidebar-primary: 240 5.9% 10%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 240 4.8% 95.9%;
-  --sidebar-accent-foreground: 240 5.9% 10%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
-}
-
-/* dark theme */
+/*
+ * Zelosify design tokens — "Midnight command center, coral neon".
+ * Reference: DESIGN.md (Raycast). The product is dark-only.
+ *
+ * Every color is stored as space-separated RGB channels so Tailwind opacity
+ * modifiers work everywhere (e.g. `bg-card/60`, `border-border/50`).
+ */
+:root,
 .dark {
-  --background: #111827; /* slate-900 */
-  --foreground: #f8fafc; /* slate-100 */
-  --primary: #cbd5e1; /* slate-300 */
-  --secondary: #9ca3af; /* gray-400 */
-  --tertiary: #000000; /* plain-black */
-  --border: #374151; /* gray-700 */
-  --ring: #2563eb; /* blue-600 */
-  --focus: #2563eb; /* blue-600 */
-  --chart-line: #fff; /* plain-white */
-  --table-header: #171f2b; /* gray-850 */
-  --scroll-bar: #4b5563; /* gray-600 */
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: #cbd5e1; /* slate-300 */
-  --accent: #1f2937; /* gray-800 */
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: #f87171;
-  --input: 217.2 32.6% 17.5%;
-  --chart-1: 220 70% 50%; /* Light Blue */
-  --chart-2: 160 60% 45%; /* Light Green */
-  --chart-3: 30 80% 55%; /* Light Coral */
-  --chart-4: 280 65% 60%; /* Lavender */
-  --chart-5: 340 75% 55%; /* Salmon */
-  --chart-6: 0 100% 50%; /* Red */
-  --chart-7: 120 100% 50%; /* Green */
-  --chart-8: 240 100% 50%; /* Blue */
-  --chart-9: 60 100% 50%; /* Yellow */
-  --chart-10: 300 100% 50%; /* Magenta */
-  --chart-11: 180 100% 50%; /* Cyan */
-  --chart-12: 0 0% 50%; /* Gray */
-  --radius: 0.5rem;
-  --sidebar-background: 240 5.9% 10%;
-  --sidebar-foreground: 240 4.8% 95.9%;
-  --sidebar-primary: 224.3 76.3% 48%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 3.7% 15.9%;
-  --sidebar-accent-foreground: 240 4.8% 95.9%;
-  --sidebar-border: 240 3.7% 15.9%;
-  --sidebar-ring: 217.2 91.2% 59.8%;
-}
+  /* Surfaces */
+  --background: 4 5 6; /* Void Black  #040506 */
+  --foreground: 245 245 245; /* Near-white heading text */
+  --card: 7 8 10; /* Ink         #07080a */
+  --card-foreground: 245 245 245;
+  --popover: 11 12 14;
+  --popover-foreground: 245 245 245;
+  --muted: 17 18 20; /* Obsidian    #111214 */
+  --muted-foreground: 156 156 157; /* Ash         #9c9c9d */
+  --accent: 27 28 30; /* Graphite    #1b1c1e */
+  --accent-foreground: 245 245 245;
+  --secondary: 27 28 30;
+  --secondary-foreground: 230 230 230;
+  --tertiary: 4 5 6;
 
-.recharts-bar-rectangle:hover {
-  fill: none; /* Remove the fill color */
+  /* Actions — Mist fill, Iron label (the only filled neutral CTA) */
+  --primary: 230 230 230; /* Mist #e6e6e6 */
+  --primary-foreground: 24 25 26;
+
+  /* Lines & focus */
+  --border: 54 55 57; /* Hairline #363739 */
+  --input: 17 18 20;
+  --ring: 255 99 99;
+  --focus: 255 99 99;
+
+  /* Brand + semantic */
+  --coral: 255 99 99; /* Coral Pulse #ff6363 */
+  --ember: 69 35 36; /* Ember Hush  #452324 */
+  --destructive: 255 99 99;
+  --destructive-foreground: 255 140 140;
+  --success: 89 212 153; /* #59d499 */
+  --info: 86 194 255; /* #56c2ff */
+  --warning: 245 185 74;
+
+  /* Misc */
+  --chart-line: 245 245 245;
+  --table-header: 11 12 14;
+  --scroll-bar: 54 55 57;
+  --chart-1: 255 99 99;
+  --chart-2: 89 212 153;
+  --chart-3: 86 194 255;
+  --chart-4: 245 185 74;
+  --chart-5: 156 156 157;
+  --radius: 0.5rem;
+
+  --sidebar-background: 4 5 6;
+  --sidebar-foreground: 156 156 157;
+  --sidebar-primary: 255 99 99;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 17 18 20;
+  --sidebar-accent-foreground: 245 245 245;
+  --sidebar-border: 27 28 30;
+  --sidebar-ring: 255 99 99;
+
+  color-scheme: dark;
 }
 
 html {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
-* {
-  margin: 0;
-  padding: 0;
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: var(--font-inter), system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
+  font-feature-settings: "calt", "kern", "liga", "ss03";
+  font-weight: 400;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Consistent box model + borders, without clobbering text inheritance */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
-  font-weight: 500; /* Optional default weight */
-  font-size: medium;
-  font-style: normal; /* Optional default style */
 }
 
-/* this is for testimonial section  */
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: rgb(var(--foreground));
+}
+
+::selection {
+  background: rgb(255 99 99 / 0.35);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--ring) / 0.8);
+  outline-offset: 2px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgb(var(--muted-foreground) / 0.7);
+}
+
+/* Browser autofill: keep dark inset look instead of bright yellow/white */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: rgb(var(--foreground));
+  caret-color: rgb(var(--foreground));
+  -webkit-box-shadow: 0 0 0 1000px rgb(17 18 20) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+.recharts-bar-rectangle:hover {
+  fill: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: rgb(var(--scroll-bar));
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted-foreground) / 0.6);
+}
+::-webkit-scrollbar-track {
+  background: rgb(var(--background));
+}
+
+.scroll-mt-40 {
+  scroll-margin-top: 40px;
+}
+
+/* ---------- Reusable product primitives ---------- */
+@layer components {
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+  .cancel-red {
+    @apply text-coral;
+  }
+
+  /* Tactile "keyboard key" surface (DESIGN.md: Feature Card with Key Shadow) */
+  .surface {
+    @apply rounded-card border border-border/70 bg-card shadow-key;
+  }
+  .surface-interactive {
+    @apply surface transition-all duration-200 hover:border-border hover:bg-muted/60 hover:shadow-key-hover;
+  }
+
+  /* Floating glass bars (nav, headers, toolbars) */
+  .glass {
+    @apply border border-border/70 bg-background/70 backdrop-blur-xl;
+  }
+
+  /* 11px uppercase eyebrow label */
+  .eyebrow {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground;
+  }
+
+  /* Page scaffolding shared by every dashboard screen */
+  .page-shell {
+    @apply mx-auto w-full max-w-[1200px] px-6 py-8 lg:px-8;
+  }
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+  .page-subtitle {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
+
+  /* Inset input well */
+  .field {
+    @apply h-10 w-full rounded-lg border border-border/70 bg-white/[0.04] px-3 text-sm text-foreground shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)] transition-colors placeholder:text-muted-foreground/70 hover:border-border focus:border-coral/60 focus:outline-none focus:ring-2 focus:ring-coral/25 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .field-label {
+    @apply mb-1.5 block text-[13px] font-medium text-muted-foreground;
+  }
+
+  /* Buttons — Mist fill is the single filled action; coral is reserved */
+  .btn {
+    @apply inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 text-[13px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/50 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-primary-foreground shadow-[inset_0_1px_0_0_rgba(255,255,255,0.5)] hover:bg-white;
+  }
+  .btn-secondary {
+    @apply btn border border-border/80 bg-accent text-foreground shadow-key hover:border-border hover:bg-muted;
+  }
+  .btn-ghost {
+    @apply btn text-muted-foreground hover:bg-accent hover:text-foreground;
+  }
+  .btn-danger {
+    @apply btn border border-coral/30 bg-coral/10 text-coral hover:bg-coral/20;
+  }
+}
+
+@layer utilities {
+  /* Decorative backdrops */
+  .bg-dots {
+    background-image: radial-gradient(
+      rgb(255 255 255 / 0.08) 1px,
+      transparent 1px
+    );
+    background-size: 22px 22px;
+  }
+  .bg-hero-glow {
+    background: radial-gradient(
+        60% 50% at 50% 0%,
+        rgba(4, 63, 150, 0.45) 0%,
+        rgba(6, 18, 37, 0) 70%
+      ),
+      radial-gradient(
+        40% 35% at 85% 10%,
+        rgba(255, 99, 99, 0.22) 0%,
+        rgba(255, 99, 99, 0) 70%
+      );
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+}
+
+/* Legacy keyframes still referenced by older sections */
 @keyframes marquee {
   0% {
     transform: translateX(0);
   }
-
   100% {
     transform: translateX(-50%);
   }
 }
-
 .animate-marquee {
   animation: marquee 60s linear infinite;
 }
-
-/* this is for contact section  */
 @keyframes fade-in {
   from {
     opacity: 0;
     transform: translateY(20px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
 
-/* for background banner  */
-
-/* In your Tailwind CSS configuration (e.g., styles.css) */
-.scroll-mt-40 {
-  scroll-margin-top: 40px;
-}
-
-.whitespace-nowrap {
-  white-space: nowrap;
-}
-.overflow-hidden {
-  overflow: hidden;
-}
-
-/* this is for scroll bar  */
-html {
-  scroll-behavior: smooth;
-}
-
-::-webkit-scrollbar {
-  width: 0.3rem;
-}
-
-::-webkit-scrollbar-thumb {
-  border-radius: 5px;
-  background: var(--scroll-bar);
-  transition: all 0.5s ease-in-out;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-/* Resusable classes */
-@layer components {
-  .flex-center {
-    @apply flex justify-center items-center;
-  }
-  .cancel-red {
-    @apply text-red-600 dark:text-red-400;
-  }
-}
-
-/* Animation delays for typing indicator */
-@layer utilities {
-  .animation-delay-200 {
-    animation-delay: 0.2s;
-  }
-
-  .animation-delay-400 {
-    animation-delay: 0.4s;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

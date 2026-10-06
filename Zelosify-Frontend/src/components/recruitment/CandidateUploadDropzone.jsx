@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, RefreshCw, X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/UI/shadcn/button";
 import {
   presignCandidateProfiles,
@@ -19,7 +20,11 @@ const ACCEPTED_TYPES = {
   "application/vnd.ms-powerpoint": [".pptx"],
 };
 
-export default function CandidateUploadDropzone({ openingId, onUploadSuccess }) {
+export default function CandidateUploadDropzone({
+  openingId,
+  onUploadSuccess,
+  onCancel,
+}) {
   const [fileQueue, setFileQueue] = useState([]); // Array of { id, file, progress, status, error, s3Key }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalError, setGlobalError] = useState(null);
@@ -160,6 +165,7 @@ export default function CandidateUploadDropzone({ openingId, onUploadSuccess }) 
       setTimeout(() => {
         setFileQueue([]);
         setIsSubmitting(false);
+        toast.success("Candidate profiles uploaded successfully");
         if (onUploadSuccess) {
           onUploadSuccess(submitResponse.data || []);
         }
@@ -289,7 +295,18 @@ export default function CandidateUploadDropzone({ openingId, onUploadSuccess }) 
             ))}
           </div>
 
-          <div className="p-3 bg-muted/20 flex justify-end">
+          <div className="p-3 bg-muted/20 flex items-center justify-end gap-2">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            )}
             <Button
               onClick={handleStartUpload}
               disabled={isSubmitting || fileQueue.length === 0}

@@ -1,82 +1,87 @@
-import { Mail, Printer, Upload, X } from "lucide-react";
+import { Mail, Printer, Upload, X, FileText } from "lucide-react";
+import { Button } from "@/components/UI/shadcn/button";
 
-export default function OrderDetailsPopup({ onClose }) {
+export default function OrderDetailsPopup({ order, onClose }) {
+  const contractId = order?.id || "#192541";
+  const customerName = order?.customer?.name || "Esther Howard";
+  const customerInitials = order?.customer?.initials || "EH";
+  const email = order?.people || "contractor@company.com";
+  const total = order?.total || "$3,127.00";
+  const status = order?.status || "Active";
+
   return (
-    <div className="fixed inset-0 bg-white/50 dark:bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background border border-border rounded-lg shadow-xl w-[500px]">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in-0 duration-150">
+      <div className="w-full max-w-md rounded-card-lg border border-border/80 bg-card shadow-float overflow-hidden">
         {/* Header */}
-        <div className="rounded-t-lg flex items-center justify-between p-4 border-b border-border bg-black dark:bg-[#171f2b]">
-          <div className="flex items-center gap-3">
-            <div className="text-sm text-white font-medium">
-              Contract #192541
+        <div className="flex items-center justify-between p-4 border-b border-border/80 bg-muted/40">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-border/70 flex items-center justify-center text-foreground">
+              <FileText className="w-4 h-4 text-coral" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-foreground font-mono">
+                Contract {contractId}
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                Vendor Statement of Work
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="text-gray-200 hover:text-gray-400"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-white/[0.06] transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="p-4 text-foreground">
+        <div className="p-5 text-foreground space-y-4 text-xs">
           {/* Customer Info */}
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-medium text-gray-700">
-                EH
+          <div className="p-3.5 rounded-lg border border-border/60 bg-muted/30 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-muted border border-border/60 flex items-center justify-center font-mono text-xs text-foreground font-medium">
+                {customerInitials}
               </div>
-              <div className="font-medium">Esther Howard</div>
+              <div>
+                <p className="font-semibold text-foreground">{customerName}</p>
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
+                  <Mail className="h-3 w-3" />
+                  {email}
+                </p>
+              </div>
             </div>
-            <div className="ml-2 flex items-center gap-5 mb-2">
-              <Mail className="h-4 w-4 " />
-              <div className="text-sm ">brodrigues@gmail.com</div>
-            </div>
-            {/* <div className="ml-2 flex items-center gap-5 mb-2">
-              <Phone className="h-4 w-4" />
-              <div className="text-sm">+1 (415) 555-2671</div>
-            </div> */}
+            <span className="px-2 py-0.5 text-[10px] font-medium text-[#59d499] bg-[#59d499]/10 border border-[#59d499]/25 rounded-[6px]">
+              {status}
+            </span>
           </div>
 
-          {/* Contract Details - Bullet List */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold mb-2">Contract Details :</h3>
-            <ul className="list-disc pl-5 space-y-3 text-sm ">
-              <li>
-                <span className="">Contract Name</span>
-                <br />
-                <span className="font-medium">#192541</span>
-                <br />
-                <span className="">$1,590.00</span>
-                <br />
-                <span className="">Feb 1, 2025 to March 1, 2025</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Total Section */}
-          <div className="pt-4 border-t border-border border-dashed">
-            <div className="flex justify-between">
-              <span className="font-medium">Total:</span>
-              <span className="font-medium">$1,927.89</span>
+          {/* Contract Details */}
+          <div className="space-y-2 border-t border-border/60 pt-3">
+            <div className="flex justify-between py-1">
+              <span className="text-muted-foreground">Contract Number</span>
+              <span className="font-mono text-foreground font-medium">{contractId}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-muted-foreground">Term Period</span>
+              <span className="text-foreground">Current Billing Cycle</span>
+            </div>
+            <div className="flex justify-between py-1 border-t border-border/60 pt-2 text-sm font-semibold">
+              <span className="text-foreground">Total Authorized:</span>
+              <span className="text-foreground font-mono">{total}</span>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="rounded-b-lg flex items-center justify-between p-4 border-t border-border bg-tableHeader">
-          <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-3 py-1.5 text-sm border border-border rounded-md">
-              <Upload className="h-4 w-4" /> Export
-            </button>
-            <button className="flex items-center gap-2 px-3 py-1.5 text-sm border border-border rounded-md">
-              <Printer className="h-4 w-4" /> Print
-            </button>
-          </div>
-          <button className="text-foreground">•••</button>
+        <div className="flex items-center justify-end gap-2 p-3.5 border-t border-border/80 bg-muted/30">
+          <Button variant="outline" size="sm" onClick={onClose} className="gap-1.5 text-xs">
+            <Upload className="h-3.5 w-3.5" /> Export PDF
+          </Button>
+          <Button variant="default" size="sm" onClick={onClose} className="text-xs">
+            Done
+          </Button>
         </div>
       </div>
     </div>

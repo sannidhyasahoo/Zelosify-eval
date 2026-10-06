@@ -12,48 +12,33 @@ import { MdDataUsage } from "react-icons/md";
 // Role-based menu items
 const getOverviewItemsByRole = (role) => {
   switch (role) {
-    // For VENDOR_MANAGER role
-    case "VENDOR_MANAGER":
-      return [
-        {
-          title: "Smile",
-          href: "#",
-          icon: Smile,
-          hasSubmenu: true,
-          submenu: [{ title: "Sad", href: "/user", icon: Frown }],
-        },
-      ];
-
-    // For BUSINESS_USER role
-    case "BUSINESS_USER":
-      return [
-        {
-          title: "Digital",
-          href: "/business-user/digital-initiative",
-          icon: MdDataUsage,
-        },
-        {
-          title: "Dummy Page 1",
-          href: "/business-user/dummy-page-1",
-          icon: Scale3DIcon,
-        },
-      ];
-
     // For IT_VENDOR
     case "IT_VENDOR":
       return [
-        { title: "Openings", href: "/vendor/openings", icon: Briefcase },
-        { title: "Payments", href: "/vendor/payments", icon: CreditCard },
+        { title: "Contract Openings", href: "/vendor/openings", icon: Briefcase },
+        { title: "Payments & Invoices", href: "/vendor/payments", icon: CreditCard },
       ];
 
     // For HIRING_MANAGER
     case "HIRING_MANAGER":
       return [
-        { title: "Openings", href: "/hiring-manager/openings", icon: Briefcase },
+        { title: "My Openings", href: "/hiring-manager/openings", icon: Briefcase },
+      ];
+
+    // For BUSINESS_USER
+    case "BUSINESS_USER":
+      return [
+        {
+          title: "Openings Overview",
+          href: "/hiring-manager/openings",
+          icon: Briefcase,
+        },
       ];
 
     default:
-      return [];
+      return [
+        { title: "Openings", href: "/hiring-manager/openings", icon: Briefcase },
+      ];
   }
 };
 

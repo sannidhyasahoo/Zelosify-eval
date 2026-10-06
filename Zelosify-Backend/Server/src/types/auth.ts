@@ -20,8 +20,10 @@ export interface RegisterRequest {
   lastName: string;
   /** User's phone number */
   phoneNumber: string;
-  /** Tenant ID for multi-tenant setup */
-  tenantId: string;
+  /** Tenant ID for multi-tenant setup (optional if companyName provided) */
+  tenantId?: string;
+  /** Company name for tenant resolution/creation */
+  companyName?: string;
   /** User's department */
   department: string;
   /** User's role in the system */

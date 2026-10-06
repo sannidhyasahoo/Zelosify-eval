@@ -1,14 +1,9 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { FcGoogle } from "react-icons/fc";
-import { BsMicrosoft } from "react-icons/bs";
-import SocialButton from "@/components/UI/SocialButton";
 import Link from "next/link";
-import axiosInstance from "@/utils/Axios/AxiosInstance";
 import useAuth from "@/hooks/Auth/useAuth";
-import BoxHeader from "./BoxHeader";
+import { AuthCard, FormError } from "@/components/Auth/AuthCard";
 import LoginForm from "./LoginForm";
 
 export default function LoginLayout() {
@@ -140,47 +135,29 @@ export default function LoginLayout() {
     [formData, loginStage, handleLogin, handleVerifyTOTP]
   );
 
-  const handleGoogleLogin = useCallback(async () => {
-    try {
-      const resp = await axiosInstance.get("/auth/google/login");
-
-      window.location.href = resp.data.authUrl;
-    } catch (err) {
-      console.error(err.message);
-
-      setError({ general: "Failed to initiate Google login" });
-    }
-  }, []);
-
-  const handleMicrosoftLogin = useCallback(async () => {
-    try {
-      const resp = await axiosInstance.get("/auth/microsoft/login");
-
-      window.location.href = resp.data.authUrl;
-    } catch (err) {
-      console.error(err.message);
-
-      setError({ general: "Failed to initiate Microsoft login" });
-    }
-  }, []);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg"
+    <AuthCard
+      eyebrow={loginStage === "totp" ? "Two-factor authentication" : "Sign in"}
+      title={loginStage === "totp" ? "Verify it's you" : "Welcome back"}
+      subtitle={
+        loginStage === "totp"
+          ? "One more step to protect your workspace."
+          : "Sign in to continue to your workspace."
+      }
+      footer={
+        <>
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Create one
+          </Link>
+        </>
+      }
     >
-      <BoxHeader />
-
-      {error.general && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-sm"
-        >
-          {error.general}
-        </motion.div>
-      )}
+      <FormError>{error.general}</FormError>
 
       <LoginForm
         handleChange={handleChange}
@@ -192,44 +169,6 @@ export default function LoginLayout() {
         setShowPassword={setShowPassword}
         setLoginStage={setLoginStage}
       />
-
-      <div className="mt-6 space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-              Or continue with
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <SocialButton
-            icon={FcGoogle}
-            onClick={handleGoogleLogin}
-            label="Sign in with Google"
-          />
-          <SocialButton
-            icon={BsMicrosoft}
-            onClick={handleMicrosoftLogin}
-            label="Sign in with Microsoft"
-          />
-        </div>
-      </div>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            Sign up
-          </Link>
-        </p>
-      </div>
-    </motion.div>
+    </AuthCard>
   );
 }

@@ -10,6 +10,7 @@ import axios from "axios";
 import { AuthProvider, Role } from "@prisma/client";
 import { getClientSecret } from "../../../../config/keycloak/keycloak.js";
 import { isValidRole } from "../../../../utils/RBAC/isValidRole.js";
+import jwt from "jsonwebtoken";
 
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || "http://localhost:8080/auth";
 const REALM_NAME = process.env.KEYCLOAK_REALM || "Zelosify";
@@ -31,6 +32,7 @@ export const register = asyncHandler(
         lastName,
         phoneNumber,
         tenantId,
+        companyName,
         department,
         role,
       } = req.body;
@@ -42,11 +44,14 @@ export const register = asyncHandler(
         !firstName ||
         !lastName ||
         !phoneNumber ||
-        !tenantId ||
+        (!tenantId && !companyName) ||
         !department ||
         !role
       ) {
-        res.status(400).json({ error: "All fields are required." });
+        res.status(400).json({
+          error: "All fields are required.",
+          message: "All fields are required.",
+        });
         return;
       }
 
@@ -55,22 +60,46 @@ export const register = asyncHandler(
         where: { OR: [{ username }, { email }] },
       });
       if (existingUser) {
-        res.status(400).json({ message: "User already exists." });
+        res.status(400).json({
+          error: "User already exists.",
+          message: "User already exists.",
+        });
         return;
       }
 
-      // Verify that the tenantId exists in the database
-      const tenant = await prisma.tenants.findUnique({
-        where: { tenantId },
-      });
+      // Verify or resolve tenant
+      let tenant = null;
+      if (tenantId) {
+        tenant = await prisma.tenants.findUnique({
+          where: { tenantId },
+        });
+      } else if (companyName) {
+        tenant = await prisma.tenants.findFirst({
+          where: { companyName },
+        });
+        if (!tenant) {
+          tenant = await prisma.tenants.create({
+            data: { companyName },
+          });
+        }
+      }
+
       if (!tenant) {
-        res.status(400).json({ message: "Invalid tenant ID." });
+        res.status(400).json({
+          error: "Invalid company name or tenant ID.",
+          message: "Invalid company name or tenant ID.",
+        });
         return;
       }
+
+      const effectiveTenantId = tenant.tenantId;
 
       // Validate the provided role
       if (!isValidRole(role)) {
-        res.status(400).json({ message: "Invalid role provided." });
+        res.status(400).json({
+          error: "Invalid role provided.",
+          message: "Invalid role provided. Valid roles include IT_VENDOR and HIRING_MANAGER.",
+        });
         return;
       }
 
@@ -90,38 +119,52 @@ export const register = asyncHandler(
         credentials: [{ type: "password", value: password, temporary: false }],
       });
 
-      //Assigning role to a user in keycloak
+      // Assigning role to a user in keycloak
       if (keycloakUser.id && role) {
         try {
-          // Attempt to fetch the specified role from Keycloak
-          const roleResponse = await axios.get(
-            `${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/roles/${role}`,
-            { headers: { Authorization: `Bearer ${adminToken}` } }
-          );
+          let roleData: any = null;
+          try {
+            const roleResponse = await axios.get(
+              `${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/roles/${role}`,
+              { headers: { Authorization: `Bearer ${adminToken}` } }
+            );
+            roleData = roleResponse.data;
+          } catch (fetchErr: any) {
+            if (fetchErr.response?.status === 404) {
+              // Auto-create role in Keycloak realm if not present
+              try {
+                await axios.post(
+                  `${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/roles`,
+                  { name: role },
+                  { headers: { Authorization: `Bearer ${adminToken}` } }
+                );
+                const roleResponse = await axios.get(
+                  `${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/roles/${role}`,
+                  { headers: { Authorization: `Bearer ${adminToken}` } }
+                );
+                roleData = roleResponse.data;
+              } catch (createErr) {
+                // Non-fatal, PostgreSQL maintains authoritative role
+              }
+            }
+          }
 
-          // Check if the role object is valid (e.g. it has an id)
-          if (!roleResponse.data || !roleResponse.data.id) {
-            console.error(`Role "${role}" not found in Keycloak.`);
-          } else {
+          if (roleData && roleData.id) {
             try {
-              // Assign the role to the user in Keycloak
               await axios.post(
                 `${KEYCLOAK_URL}/admin/realms/${REALM_NAME}/users/${keycloakUser.id}/role-mappings/realm`,
-                [roleResponse.data],
+                [roleData],
                 { headers: { Authorization: `Bearer ${adminToken}` } }
               );
               console.log(
                 `Role "${role}" successfully assigned to user ${keycloakUser.id}.`
               );
-            } catch (error) {
-              console.error(
-                `Error assigning role "${role}" to user ${keycloakUser.id}:`,
-                error
-              );
+            } catch (assignError) {
+              // Non-fatal
             }
           }
-        } catch (error) {
-          console.error(`Failed to fetch role "${role}" from Keycloak:`, error);
+        } catch (error: any) {
+          console.warn(`Keycloak role assignment skipped:`, error?.message || error);
         }
       }
 
@@ -140,7 +183,7 @@ export const register = asyncHandler(
           phoneNumber,
           department,
           role: role as Role,
-          tenantId,
+          tenantId: effectiveTenantId,
           externalId: keycloakUser.id,
           totpSecret,
           provider: AuthProvider.KEYCLOAK,
@@ -193,6 +236,29 @@ export const register = asyncHandler(
           path: "/",
         });
       }
+
+      // Set registration_token cookie for TOTP setup
+      const registrationToken = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_SECRET || "default_jwt_secret",
+        { expiresIn: "1h" }
+      );
+      res.cookie("registration_token", registrationToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 3600 * 1000,
+        path: "/",
+      });
+
+      // Set role cookie for client-side navigation
+      res.cookie("role", user.role, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 3600 * 1000,
+        path: "/",
+      });
 
       // Generate QR code for TOTP
       const otpAuthUrl = authenticator.keyuri(email, REALM_NAME, totpSecret);

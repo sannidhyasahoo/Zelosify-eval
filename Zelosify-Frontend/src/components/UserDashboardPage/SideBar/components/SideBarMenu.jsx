@@ -50,34 +50,32 @@ export const SidebarMenuButton = memo(
         className={`
         flex w-full items-center ${
           isOpen ? "justify-between" : "justify-center"
-        } px-3 py-2 text-sm rounded-md
+        } px-2.5 py-2 text-xs rounded-lg transition-all duration-150
         ${
           isActive
-            ? "bg-blue-50 text-blue-600 font-medium dark:bg-blue-900/20 dark:text-blue-400"
-            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+            ? "bg-white/[0.08] text-white font-medium border border-border/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+            : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground border border-transparent"
         }
         ${className || ""}
       `}
         {...props}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
           {Icon && (
             <Icon
-              className={`h-5 w-5 ${
-                isActive
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 dark:text-gray-400"
+              className={`h-4 w-4 shrink-0 transition-colors ${
+                isActive ? "text-coral" : "text-muted-foreground"
               }`}
             />
           )}
-          {isOpen && <span>{title}</span>}
+          {isOpen && <span className="truncate">{title}</span>}
         </div>
         {isOpen &&
           hasSubmenu &&
           (isExpanded ? (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-70" />
           ))}
       </button>
     );

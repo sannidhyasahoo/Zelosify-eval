@@ -39,7 +39,12 @@ const Sidebar = memo(({ isOpen, toggleSidebar }) => {
   const [expandedItems, setExpandedItems] = useState([]);
   const [userRole, setUserRole] = useState(null);
   const [isMobile, setIsMobile] = useState(false);
-  const { handleOpenSignoutConfirmation, showSignoutConfirmation } = useAuth();
+  const {
+    user,
+    getDisplayName,
+    handleOpenSignoutConfirmation,
+    showSignoutConfirmation,
+  } = useAuth();
 
   // Get user role from cookie
   useEffect(() => {
@@ -186,7 +191,7 @@ const Sidebar = memo(({ isOpen, toggleSidebar }) => {
       return (
         <div className="px-4 py-8">
           {isOpen && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               No menu items available for your role.
             </p>
           )}
@@ -195,10 +200,10 @@ const Sidebar = memo(({ isOpen, toggleSidebar }) => {
     }
 
     return sidebarSections.map((section, index) => (
-      <div key={index} className="space-y-2">
+      <div key={index} className="space-y-1.5">
         {isOpen && (
-          <h2 className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-1">
-            {section.title.toUpperCase()}
+          <h2 className="font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70 pl-2.5">
+            {section.title}
           </h2>
         )}
         <SidebarMenu>
@@ -278,35 +283,42 @@ const Sidebar = memo(({ isOpen, toggleSidebar }) => {
             </div>
           </div>
 
-          {/* Footer Section: Settings & Sign Out */}
-          <div className="px-3 py-4 border-t border-dashed border-gray-200 dark:border-gray-700">
-            <button
-              onClick={handleSupportClick}
-              className={`rounded-md flex gap-2 items-center w-full px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition ${
-                isOpen ? "justify-start" : "justify-center"
-              }`}
-            >
-              <supportItem.icon className="h-5 w-5" />
-              {isOpen && <span>{supportItem.title}</span>}
-            </button>
-            <button
-              onClick={handleSettingsClick}
-              className={`rounded-md flex gap-2 items-center w-full px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition ${
-                isOpen ? "justify-start" : "justify-center"
-              }`}
-            >
-              <settingsItem.icon className="h-5 w-5" />
-              {isOpen && <span>{settingsItem.title}</span>}
-            </button>
-            <button
-              onClick={handleOpenSignoutConfirmation}
-              className={`rounded-md flex gap-2 items-center w-full px-4 py-2 text-sm cancel-red hover:bg-gray-100 dark:hover:bg-gray-800 transition ${
-                isOpen ? "justify-start" : "justify-center"
-              }`}
-            >
-              <signOutItem.icon className="h-5 w-5" />
-              {isOpen && <span>{signOutItem.title}</span>}
-            </button>
+          {/* Footer Section: Company, User Identity, Role & Sign Out */}
+          <div className="px-3 py-3 border-t border-border bg-card/40">
+            {isOpen ? (
+              <div className="space-y-2">
+                <div className="px-2 py-1 rounded bg-muted/40 border border-border/50 text-xs">
+                  <p className="font-semibold text-foreground truncate">
+                    {user?.tenant?.companyName || user?.companyName || "Bruce Wayne Corp"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {getDisplayName() || user?.email || "Authenticated User"}
+                  </p>
+                  <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-foreground border border-border">
+                    {userRole ? userRole.replace(/_/g, " ") : "WORKSPACE USER"}
+                  </span>
+                </div>
+                <button
+                  onClick={handleOpenSignoutConfirmation}
+                  className="rounded-lg flex items-center gap-2 w-full px-2.5 py-1.5 text-xs text-coral hover:bg-coral/10 transition-colors"
+                  aria-label="Sign out"
+                >
+                  <signOutItem.icon className="h-3.5 w-3.5 shrink-0" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  onClick={handleOpenSignoutConfirmation}
+                  className="rounded-lg p-2 text-coral hover:bg-coral/10 transition-colors"
+                  title="Sign Out"
+                  aria-label="Sign Out"
+                >
+                  <signOutItem.icon className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </aside>
 

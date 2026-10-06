@@ -4,38 +4,30 @@ import Link from "next/link";
 
 // eslint-disable-next-line react/display-name
 const SidebarHeader = memo(({ isOpen, toggleSidebar }) => (
-  <div className="h-16 border-b border-gray-200 dark:border-gray-700 flex gap-7 items-center justify-between px-5">
+  <div className="h-16 border-b border-border flex items-center justify-between px-4">
     {isOpen && (
       <Link
-        href={"/login"}
-        className="text-lg font-bold text-gray-900 dark:text-gray-100 overflow-hidden whitespace-nowrap"
+        href={"/"}
+        className="flex items-center overflow-hidden whitespace-nowrap"
       >
         <img
-          src={"/assets/logos/zelosify_Dark.png"}
-          alt="Zelosify Light Logo"
-          width={120}
-          height={40}
-          className="object-contain block dark:hidden"
-        />
-        <img
           src={"/assets/logos/main-logo.png"}
-          alt="Zelosify Dark Logo"
-          width={120}
-          height={40}
-          className="object-contain hidden dark:block"
+          alt="Zelosify"
+          className="h-7 w-auto object-contain"
         />
       </Link>
     )}
     <button
       onClick={toggleSidebar}
-      className={`rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center ${
-        isOpen ? "" : "w-full"
+      className={`rounded-lg p-1.5 text-muted-foreground hover:bg-white/[0.06] hover:text-foreground transition-colors ${
+        isOpen ? "" : "w-full flex justify-center"
       }`}
+      aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
     >
       {isOpen ? (
-        <X className="h-7 w-7 p-1 text-gray-600 dark:text-gray-300" />
+        <X className="h-5 w-5" />
       ) : (
-        <Menu className="h-7 w-7 p-1 text-gray-600 dark:text-gray-300" />
+        <Menu className="h-5 w-5" />
       )}
     </button>
   </div>

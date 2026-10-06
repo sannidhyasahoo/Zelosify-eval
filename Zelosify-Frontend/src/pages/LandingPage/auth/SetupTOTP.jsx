@@ -1,15 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axiosInstance from "@/utils/Axios/AxiosInstance";
-import CircleLoader from "@/components/UI/loaders/CircleLoader";
+import { AuthCard, FormError, Field } from "@/components/Auth/AuthCard";
+
+const STEPS = [
+  "Scan this QR code with Google Authenticator, Authy or Microsoft Authenticator.",
+  "Your app will show a 6-digit code that refreshes every 30 seconds.",
+  "Enter the current code below to finish setting up your account.",
+];
 
 export default function SetupTOTP() {
   const [qrCode, setQrCode] = useState("");
   const [totpCode, setTotpCode] = useState("");
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [verifyError, setVerifyError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const router = useRouter();
@@ -22,16 +29,16 @@ export default function SetupTOTP() {
         if (parsedTOTP.qrCode) {
           setQrCode(parsedTOTP.qrCode);
         } else {
-          setError("Invalid TOTP setup data. Missing QR code.");
+          setLoadError("Invalid setup data. The QR code is missing.");
         }
       } catch (err) {
-        setError("Failed to parse TOTP setup data.");
+        setLoadError("We couldn't read your setup data.");
         console.error("TOTP parse error:", err);
       } finally {
         setIsLoading(false);
       }
     } else {
-      setError("TOTP setup data not found. Please register again.");
+      setLoadError("Setup data not found. Please register again.");
       setIsLoading(false);
     }
   }, []);
@@ -39,49 +46,48 @@ export default function SetupTOTP() {
   const handleVerifyTOTP = async (e) => {
     e.preventDefault();
 
-    if (!totpCode.trim()) {
-      setError("Please enter the 6-digit code from your authenticator app");
+    const code = totpCode.trim();
+    if (!code) {
+      setVerifyError("Enter the 6-digit code from your authenticator app.");
       return;
     }
-
-    if (totpCode.trim().length !== 6 || !/^\d+$/.test(totpCode.trim())) {
-      setError("TOTP code must be 6 digits");
+    if (code.length !== 6 || !/^\d+$/.test(code)) {
+      setVerifyError("The code must be exactly 6 digits.");
       return;
     }
 
     setIsVerifying(true);
-    setError("");
+    setVerifyError("");
 
     try {
-      // The backend will use the registration_token cookie to identify the user
-      console.log("Sending TOTP verification with code:", totpCode.trim());
-
+      // The backend identifies the user via the registration_token cookie
       const response = await axiosInstance.post("/auth/verify-initial-totp", {
-        totp: totpCode.trim(),
+        totp: code,
       });
 
-      console.log("TOTP verification successful:", response.data);
-
-      // Clear TOTP data from localStorage
       localStorage.removeItem("totpSetup");
 
-      // Redirect to user dashboard
-      router.push("/user");
+      const userRole = response.data?.user?.role;
+      if (userRole === "HIRING_MANAGER") {
+        window.location.href = "/hiring-manager/openings";
+      } else if (userRole === "IT_VENDOR") {
+        window.location.href = "/vendor/openings";
+      } else {
+        window.location.href = "/login";
+      }
     } catch (err) {
-      console.error("TOTP verification error:", err);
-      console.error("Error details:", err.response?.data);
-
-      if (err.response?.status === 401) {
-        setError("Invalid verification code. Please try again.");
-      } else if (err.response?.status === 400) {
-        setError("Registration session expired. Please register again.");
+      const status = err.response?.status;
+      if (status === 401) {
+        setVerifyError("That code isn't valid. Check your app and try again.");
+      } else if (status === 400) {
+        setLoadError("Your registration session expired. Please register again.");
         setTimeout(() => router.push("/register"), 3000);
-      } else if (err.response?.status === 500) {
-        setError(
-          "Backend server error. This is likely due to a configuration issue in the verifyInitialTOTP function. Please contact the administrator with this error message."
+      } else if (status === 500) {
+        setVerifyError(
+          "Something went wrong on our side. Please try again in a moment."
         );
       } else {
-        setError(
+        setVerifyError(
           err.response?.data?.message ||
             "Verification failed. Please try again."
         );
@@ -92,98 +98,88 @@ export default function SetupTOTP() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg"
+    <AuthCard
+      eyebrow="Step 2 of 2"
+      title="Secure your account"
+      subtitle="Set up two-factor authentication to finish."
     >
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-        Setup Two-Factor Authentication
-      </h1>
-
       {isLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <CircleLoader />
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
-      ) : error ? (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-sm"
-        >
-          <p>{error}</p>
+      ) : loadError ? (
+        <div>
+          <FormError>{loadError}</FormError>
           <button
             onClick={() => router.push("/register")}
-            className="mt-3 text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 underline"
+            className="btn-secondary w-full"
           >
-            Back to Registration
+            Back to registration
           </button>
-        </motion.div>
+        </div>
       ) : (
         <div className="space-y-6">
           {qrCode && (
             <div className="flex justify-center">
-              <img
-                src={qrCode}
-                alt="TOTP QR Code"
-                className="border-4 border-white dark:border-gray-700 rounded-lg"
-              />
+              <div className="rounded-2xl bg-white p-3 shadow-[0_0_40px_0_rgba(255,99,99,0.15)]">
+                <img
+                  src={qrCode}
+                  alt="Authenticator QR code"
+                  className="h-44 w-44"
+                />
+              </div>
             </div>
           )}
 
-          <div className="space-y-4 text-gray-600 dark:text-gray-300">
-            <div className="text-sm">
-              <p>
-                1. Scan this QR code using your preferred authenticator app:
-              </p>
-              <ul className="list-disc list-inside mt-2 ml-4">
-                <li>Google Authenticator</li>
-                <li>Authy</li>
-                <li>Microsoft Authenticator</li>
-              </ul>
-            </div>
-            <p className="text-sm">
-              2. Once scanned, you'll see a 6-digit code that changes every 30
-              seconds.
-            </p>
-            <p className="text-sm">
-              3. You'll need this code every time you sign in.
-            </p>
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg mt-4">
-              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                Important: Keep your authenticator app safe. If you lose access,
-                you may not be able to log in.
-              </p>
-            </div>
-          </div>
+          <ol className="space-y-3">
+            {STEPS.map((step, i) => (
+              <li key={step} className="flex gap-3 text-[13px] leading-relaxed">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-accent font-mono text-[11px] text-muted-foreground">
+                  {i + 1}
+                </span>
+                <span className="text-muted-foreground">{step}</span>
+              </li>
+            ))}
+          </ol>
 
           <form onSubmit={handleVerifyTOTP} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                Verification Code
-              </label>
+            <FormError>{verifyError}</FormError>
+            <Field label="Verification code" htmlFor="totpCode">
               <input
+                id="totpCode"
                 type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
-                placeholder="Enter 6-digit code"
+                placeholder="••••••"
                 maxLength={6}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
+                suppressHydrationWarning
+                className="field text-center font-mono text-lg tracking-[0.5em]"
               />
-            </div>
+            </Field>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               type="submit"
               disabled={isVerifying}
-              className="w-full bg-black dark:bg-white text-white dark:text-black py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50"
+              suppressHydrationWarning
+              className="btn-primary h-10 w-full text-sm"
             >
-              {isVerifying ? "Verifying..." : "Verify & Complete Setup"}
-            </motion.button>
+              {isVerifying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4" />
+              )}
+              {isVerifying ? "Verifying…" : "Verify and continue"}
+            </button>
           </form>
+
+          <p className="text-center text-[12px] text-muted-foreground">
+            Keep your authenticator app safe — you&apos;ll need a code every
+            time you sign in.
+          </p>
         </div>
       )}
-    </motion.div>
+    </AuthCard>
   );
 }

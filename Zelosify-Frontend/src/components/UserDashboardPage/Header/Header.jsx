@@ -70,25 +70,11 @@ const Header = memo(({ isSidebarOpen }) => {
           </div>
         </div> */}
 
-        <div className="flex items-center gap-2">
-          {/* Toggle Theme Button */}
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={currentTheme === "dark"} //  Ensure correct theme detection
-              onChange={() =>
-                setTheme(currentTheme === "dark" ? "light" : "dark")
-              }
-            />
-            <div className="w-12 h-6 bg-gray-200 dark:bg-gray-700 dark:border dark:border-gray-700 rounded-full peer peer-checked:after:translate-x-6 rtl:peer-checked:after:-translate-x-6 after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-black">
-              {currentTheme === "dark" ? (
-                <Moon className="absolute left-1 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white" />
-              ) : (
-                <Sun className="absolute right-1 top-1/2 transform -translate-y-1/2 h-4 w-4 text-black" />
-              )}
-            </div>
-          </label>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-muted/60 border border-border/70 text-[11px] font-mono text-muted-foreground">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#59d499]"></span>
+            <span>Live Session</span>
+          </div>
 
           {/* Bell Icon to Open Notifications */}
           {/* <div className="relative">

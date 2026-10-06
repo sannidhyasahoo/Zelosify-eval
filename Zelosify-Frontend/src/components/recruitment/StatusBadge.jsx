@@ -79,15 +79,31 @@ export default function StatusBadge({ type = "status", value, className = "" }) 
     }
   }
 
-  // Formatting display text
-  const displayText =
-    typeof value === "string"
-      ? value.replace(/_/g, " ")
-      : String(value);
+  // Mapping human product copy for AI recommendation states
+  let displayText = typeof value === "string" ? value.replace(/_/g, " ") : String(value);
+
+  if (type === "recommendationStatus") {
+    switch (normalized) {
+      case "PENDING":
+        displayText = "Analysis queued";
+        break;
+      case "PROCESSING":
+        displayText = "Analyzing candidate";
+        break;
+      case "COMPLETED":
+        displayText = "Analysis complete";
+        break;
+      case "FAILED":
+        displayText = "Analysis failed";
+        break;
+      default:
+        break;
+    }
+  }
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badgeClasses} ${className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-medium border ${badgeClasses} ${className}`}
     >
       {displayText}
     </span>

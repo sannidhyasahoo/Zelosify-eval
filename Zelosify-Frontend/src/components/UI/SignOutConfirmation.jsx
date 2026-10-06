@@ -7,7 +7,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/UI/shadcn/dialog";
-import { Loader2 } from "lucide-react"; // Assuming you use lucide-react icons
+import { Button } from "@/components/UI/shadcn/button";
+import { Loader2, LogOut } from "lucide-react";
 
 export default function SignOutConfirmation({ isOpen, onCancel }) {
   const { handleLogout, handleCloseSignoutConfirmation, isSigningOut } =
@@ -15,8 +16,6 @@ export default function SignOutConfirmation({ isOpen, onCancel }) {
 
   const handleSignOut = async () => {
     try {
-      // Pass skipConfirmationClose: true to prevent closing the dialog during logout
-      // The dialog will be closed after navigation completes
       await handleLogout({ skipConfirmationClose: true });
       if (onCancel) onCancel();
     } catch (error) {
@@ -31,41 +30,52 @@ export default function SignOutConfirmation({ isOpen, onCancel }) {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {isSigningOut ? "Signing Out..." : "Confirm Sign Out"}
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-300">
-            {isSigningOut
-              ? "Please wait while we sign you out securely..."
-              : "Are you sure you want to sign out?"}
-          </DialogDescription>
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-coral/30 bg-coral/10 text-coral">
+              <LogOut className="h-4 w-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-semibold text-foreground">
+                {isSigningOut ? "Signing Out..." : "Confirm Sign Out"}
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-xs text-muted-foreground">
+                {isSigningOut
+                  ? "Please wait while we invalidate your session securely..."
+                  : "Are you sure you want to end your current workspace session?"}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <DialogFooter className="flex justify-end space-x-4 sm:justify-end mt-6">
-          <button
+
+        <DialogFooter className="mt-6 flex flex-row justify-end gap-2.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
             onClick={handleCloseSignoutConfirmation}
-            tabIndex={0}
-            className="px-4 py-2 text-sm text-primary"
             disabled={isSigningOut}
             aria-label="Cancel sign out"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
             onClick={handleSignOut}
-            className="px-4 py-2 text-sm font-medium text-white bg-black dark:bg-white dark:text-black rounded-md hover:bg-gray-800 dark:hover:bg-gray-200 focus:outline-none flex items-center justify-center min-w-[80px]"
-            tabIndex={0}
-            aria-label="Confirm sign out"
             disabled={isSigningOut}
+            aria-label="Confirm sign out"
+            className="min-w-[88px]"
           >
             {isSigningOut ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Signing Out
               </>
             ) : (
               "Sign Out"
             )}
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

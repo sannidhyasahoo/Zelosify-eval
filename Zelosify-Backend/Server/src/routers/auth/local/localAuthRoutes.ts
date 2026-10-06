@@ -13,6 +13,7 @@ import {
   register,
   verifyLogin,
   verifyTOTP,
+  verifyInitialTOTP,
 } from "../../../controllers/controllers.js";
 import { AuthenticatedRequest } from "../../../types/common.js";
 
@@ -63,6 +64,11 @@ router.post("/verify-login", wrapHandler(verifyLogin));
  * Validates TOTP code for users with 2FA enabled
  */
 router.post("/verify-totp", wrapHandler(verifyTOTP));
+
+/**
+ * POST /verify-initial-totp - Verify initial TOTP setup after registration
+ */
+router.post("/verify-initial-totp", wrapHandler(verifyInitialTOTP));
 
 /**
  * POST /logout - Logout authenticated user

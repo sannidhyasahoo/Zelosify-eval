@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, use } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   MapPin,
@@ -16,8 +18,14 @@ import {
   Calendar,
   Layers,
   Sparkles,
+  ChevronRight,
+  ShieldCheck,
+  Search,
+  ExternalLink,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/UI/shadcn/button";
+import { Input } from "@/components/UI/shadcn/input";
 import {
   getHiringManagerOpeningProfiles,
   shortlistProfile,
@@ -31,13 +39,12 @@ import ErrorState from "@/components/recruitment/ErrorState";
 import EmptyState from "@/components/recruitment/EmptyState";
 import ScoreBreakdown from "@/components/recruitment/ScoreBreakdown";
 import AgentTraceModal from "@/components/recruitment/AgentTraceModal";
-import VirtualList from "@/components/recruitment/VirtualList";
 
 /**
- * Derive deterministic classification strictly from recommendationScore:
- * >= 0.75 -> Recommended
- * >= 0.50 && < 0.75 -> Borderline
- * < 0.50 -> Not Recommended
+ * Authoritative deterministic classification threshold:
+ * score >= 0.75 -> Recommended
+ * 0.50 <= score < 0.75 -> Borderline
+ * score < 0.50 -> Not Recommended
  */
 function getClassificationFromScore(score) {
   if (score === null || score === undefined) return null;
@@ -53,6 +60,8 @@ export default function HiringManagerOpeningDetailPage({ params }) {
 
   const [opening, setOpening] = useState(null);
   const [profiles, setProfiles] = useState([]);
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
+  const [searchFilter, setSearchFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionInProgress, setActionInProgress] = useState({}); // { [profileId]: 'shortlist' | 'reject' | 'retry' }
@@ -73,7 +82,16 @@ export default function HiringManagerOpeningDetailPage({ params }) {
         const data = response.data;
         if (data) {
           setOpening(data.opening);
-          setProfiles(data.profiles || []);
+          const candidateProfiles = data.profiles || [];
+          setProfiles(candidateProfiles);
+
+          // Auto-select first profile if none currently selected
+          setSelectedProfileId((prev) => {
+            if (prev && candidateProfiles.some((p) => p.id === prev)) {
+              return prev;
+            }
+            return candidateProfiles.length > 0 ? candidateProfiles[0].id : null;
+          });
         }
       } catch (err) {
         console.error("[HiringManagerOpeningDetail] Error fetching profiles:", err);
@@ -98,9 +116,7 @@ export default function HiringManagerOpeningDetailPage({ params }) {
     loadData(true);
   }, [loadData]);
 
-  // Polling logic:
-  // If any profile has recommendationStatus in ['PENDING', 'PROCESSING'], poll every 2.5s.
-  // Stop polling when all profiles reach terminal status ('COMPLETED', 'FAILED').
+  // Polling logic for pending or processing AI recommendations
   useEffect(() => {
     const hasActiveAiWork = profiles.some((p) => {
       const s = p.recommendationStatus;
@@ -128,31 +144,20 @@ export default function HiringManagerOpeningDetailPage({ params }) {
     };
   }, [profiles, loadData]);
 
-  // Decision actions: Shortlist
   const handleShortlist = async (profileId) => {
-    setActionError(null);
     setActionInProgress((prev) => ({ ...prev, [profileId]: "shortlist" }));
+    setActionError(null);
     try {
-      const response = await shortlistProfile(profileId);
-      const updated = response.data;
+      await shortlistProfile(profileId);
       setProfiles((prev) =>
-        prev.map((p) =>
-          p.id === profileId
-            ? {
-                ...p,
-                status: "SHORTLISTED",
-                shortlistedAt: updated?.shortlistedAt || new Date().toISOString(),
-                rejectedAt: null,
-                rejectedBy: null,
-              }
-            : p
-        )
+        prev.map((p) => (p.id === profileId ? { ...p, status: "SHORTLISTED" } : p))
       );
+      toast.success("Candidate shortlisted successfully");
     } catch (err) {
-      console.error("[HiringManager] Error shortlisting:", err);
-      setActionError(
-        err.response?.data?.error || err.message || "Failed to shortlist candidate."
-      );
+      console.error("[HiringManagerOpeningDetail] Shortlist error:", err);
+      const msg = err.response?.data?.error || err.message || "Failed to shortlist profile.";
+      setActionError(msg);
+      toast.error(msg);
     } finally {
       setActionInProgress((prev) => {
         const next = { ...prev };
@@ -162,31 +167,20 @@ export default function HiringManagerOpeningDetailPage({ params }) {
     }
   };
 
-  // Decision actions: Reject
   const handleReject = async (profileId) => {
-    setActionError(null);
     setActionInProgress((prev) => ({ ...prev, [profileId]: "reject" }));
+    setActionError(null);
     try {
-      const response = await rejectProfile(profileId);
-      const updated = response.data;
+      await rejectProfile(profileId);
       setProfiles((prev) =>
-        prev.map((p) =>
-          p.id === profileId
-            ? {
-                ...p,
-                status: "REJECTED",
-                rejectedAt: updated?.rejectedAt || new Date().toISOString(),
-                shortlistedAt: null,
-                shortlistedBy: null,
-              }
-            : p
-        )
+        prev.map((p) => (p.id === profileId ? { ...p, status: "REJECTED" } : p))
       );
+      toast.success("Candidate marked as rejected");
     } catch (err) {
-      console.error("[HiringManager] Error rejecting:", err);
-      setActionError(
-        err.response?.data?.error || err.message || "Failed to reject candidate."
-      );
+      console.error("[HiringManagerOpeningDetail] Reject error:", err);
+      const msg = err.response?.data?.error || err.message || "Failed to reject profile.";
+      setActionError(msg);
+      toast.error(msg);
     } finally {
       setActionInProgress((prev) => {
         const next = { ...prev };
@@ -196,29 +190,24 @@ export default function HiringManagerOpeningDetailPage({ params }) {
     }
   };
 
-  // Retry failed recommendation
   const handleRetryRecommendation = async (profileId) => {
-    setActionError(null);
     setActionInProgress((prev) => ({ ...prev, [profileId]: "retry" }));
+    setActionError(null);
+    toast.info("Retrying candidate recommendation analysis...");
     try {
       await retryRecommendation(profileId);
-      // Immediately reflect state to PENDING/Queued
       setProfiles((prev) =>
         prev.map((p) =>
           p.id === profileId
-            ? { ...p, recommendationStatus: "PENDING" }
+            ? { ...p, recommendationStatus: "PROCESSING" }
             : p
         )
       );
-      // Trigger data refresh
-      loadData(false);
     } catch (err) {
-      console.error("[HiringManager] Error retrying recommendation:", err);
-      setActionError(
-        err.response?.data?.error ||
-          err.message ||
-          "Failed to schedule recommendation retry."
-      );
+      console.error("[HiringManagerOpeningDetail] Retry recommendation error:", err);
+      const msg = err.response?.data?.error || err.message || "Failed to re-trigger analysis.";
+      setActionError(msg);
+      toast.error(msg);
     } finally {
       setActionInProgress((prev) => {
         const next = { ...prev };
@@ -256,14 +245,23 @@ export default function HiringManagerOpeningDetailPage({ params }) {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <ErrorState
           title="Opening Not Found"
-          message={error || "Could not retrieve opening details."}
+          message={error || "The requested opening could not be loaded."}
           onRetry={() => loadData(true)}
         />
       </div>
     );
   }
 
-  // Summary counts
+  // Filtered candidate list
+  const filteredProfiles = profiles.filter((p) =>
+    searchFilter.trim() === ""
+      ? true
+      : p.originalFilename.toLowerCase().includes(searchFilter.toLowerCase())
+  );
+
+  const selectedProfile =
+    profiles.find((p) => p.id === selectedProfileId) || profiles[0] || null;
+
   const shortlistedCount = profiles.filter((p) => p.status === "SHORTLISTED").length;
   const rejectedCount = profiles.filter((p) => p.status === "REJECTED").length;
   const activeAiCount = profiles.filter(
@@ -272,14 +270,24 @@ export default function HiringManagerOpeningDetailPage({ params }) {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      {/* Breadcrumb Navigation */}
+      <nav className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Link
+          href="/hiring-manager/openings"
+          className="hover:text-foreground transition-colors"
+        >
+          My Openings
+        </Link>
+        <ChevronRight className="w-3.5 h-3.5" />
+        <span className="text-foreground truncate max-w-sm">{opening.title}</span>
+      </nav>
+
       {/* Page Header */}
       <PageHeader
         title={opening.title}
-        backHref="/hiring-manager/openings"
-        backLabel="Back to Openings"
         actions={<StatusBadge type="openingStatus" value={opening.status} />}
       >
-        <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted-foreground mt-1">
+        <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted-foreground mt-1 font-mono">
           <div className="flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             <span>{opening.location || "Remote / Unspecified"}</span>
@@ -296,30 +304,34 @@ export default function HiringManagerOpeningDetailPage({ params }) {
               {opening.experienceMin ?? 0} - {opening.experienceMax ?? 5}+ yrs exp
             </span>
           </div>
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            <span>Posted {formatDate(opening.postedDate)}</span>
+          </div>
         </div>
       </PageHeader>
 
-      {/* Opening Summary Stats */}
+      {/* Queue Summary Stat Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 rounded-lg border border-border bg-card">
-          <p className="text-xs text-muted-foreground">Total Candidates</p>
-          <p className="text-xl font-bold text-foreground mt-0.5">{profiles.length}</p>
+        <div className="p-3 rounded-lg border border-border bg-card">
+          <p className="text-[11px] text-muted-foreground">Total Candidates</p>
+          <p className="text-lg font-bold text-foreground mt-0.5">{profiles.length}</p>
         </div>
-        <div className="p-3.5 rounded-lg border border-border bg-card">
-          <p className="text-xs text-muted-foreground">Shortlisted</p>
-          <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+        <div className="p-3 rounded-lg border border-border bg-card">
+          <p className="text-[11px] text-muted-foreground">Shortlisted</p>
+          <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
             {shortlistedCount}
           </p>
         </div>
-        <div className="p-3.5 rounded-lg border border-border bg-card">
-          <p className="text-xs text-muted-foreground">Rejected</p>
-          <p className="text-xl font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+        <div className="p-3 rounded-lg border border-border bg-card">
+          <p className="text-[11px] text-muted-foreground">Rejected</p>
+          <p className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">
             {rejectedCount}
           </p>
         </div>
-        <div className="p-3.5 rounded-lg border border-border bg-card">
-          <p className="text-xs text-muted-foreground">AI Evaluating</p>
-          <p className="text-xl font-bold text-blue-600 dark:text-blue-400 mt-0.5 flex items-center gap-1.5">
+        <div className="p-3 rounded-lg border border-border bg-card">
+          <p className="text-[11px] text-muted-foreground">In Review / Analysis</p>
+          <p className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-0.5 flex items-center gap-1.5">
             {activeAiCount}
             {activeAiCount > 0 && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />}
           </p>
@@ -334,232 +346,309 @@ export default function HiringManagerOpeningDetailPage({ params }) {
         </div>
       )}
 
-      {/* Candidates List / Review Cards */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">
-            Candidate Submissions ({profiles.length})
-          </h2>
-          {activeAiCount > 0 && (
-            <span className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              Live evaluating ({activeAiCount} in-flight)...
-            </span>
-          )}
-        </div>
-
-        {profiles.length === 0 ? (
+      {/* Master-Detail Candidate Review Workspace */}
+      {profiles.length === 0 ? (
+        <div className="py-12 bg-card rounded-lg border border-border">
           <EmptyState
             icon={FileText}
             title="No candidate profiles submitted"
-            description="Vendors have not submitted any resumes for this opening yet."
+            description="Vendors have not submitted any candidate resumes for this opening yet."
           />
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {profiles.map((profile) => {
-              const recStatus = profile.recommendationStatus || "PENDING";
-              const isCompleted = recStatus === "COMPLETED";
-              const isFailed = recStatus === "FAILED";
-              const isProcessing = recStatus === "PROCESSING" || recStatus === "PENDING";
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* LEFT: Candidate List Master Pane */}
+          <div className="lg:col-span-5 rounded-lg border border-border bg-card overflow-hidden space-y-0">
+            <div className="p-3 border-b border-border bg-muted/20">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Filter candidate names..."
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
+                  className="pl-8 h-8 text-xs bg-background"
+                />
+              </div>
+            </div>
 
-              // Strictly derived from numeric score
-              const classification = isCompleted
-                ? getClassificationFromScore(profile.recommendationScore)
-                : null;
+            <div className="divide-y divide-border max-h-[700px] overflow-y-auto">
+              {filteredProfiles.map((p) => {
+                const isSelected = p.id === selectedProfile?.id;
+                const recStatus = p.recommendationStatus || "PENDING";
+                const classification =
+                  recStatus === "COMPLETED"
+                    ? getClassificationFromScore(p.recommendationScore)
+                    : null;
+                const matchPct =
+                  p.recommendationScore !== null && p.recommendationScore !== undefined
+                    ? Math.round(Number(p.recommendationScore) * 100)
+                    : null;
 
-              const scorePct =
-                profile.recommendationScore !== null && profile.recommendationScore !== undefined
-                  ? Math.round(Number(profile.recommendationScore) * 100)
-                  : null;
-
-              const confidencePct =
-                profile.recommendationConfidence !== null &&
-                profile.recommendationConfidence !== undefined
-                  ? Math.round(Number(profile.recommendationConfidence) * 100)
-                  : null;
-
-              const inProgress = actionInProgress[profile.id];
-
-              return (
-                <div
-                  key={profile.id}
-                  className="rounded-lg border border-border bg-card p-5 space-y-4 transition-all hover:border-foreground/20"
-                >
-                  {/* Top Bar: Candidate name, submitted date, status */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground shrink-0">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-sm text-foreground">
-                          {profile.originalFilename}
-                        </h3>
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <Calendar className="w-3 h-3" />
-                          Submitted {formatDate(profile.submittedAt)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Decision:</span>
-                      <StatusBadge type="profileStatus" value={profile.status} />
-                    </div>
-                  </div>
-
-                  {/* Middle Section: AI Recommendation Details */}
-                  <div className="rounded-lg bg-muted/30 border border-border/80 p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        <span>AI Match Intelligence</span>
-                      </div>
-                      <StatusBadge type="recommendationStatus" value={recStatus} />
-                    </div>
-
-                    {/* COMPLETED State */}
-                    {isCompleted && (
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap items-center gap-3">
-                          {classification && (
-                            <StatusBadge
-                              type="decision"
-                              value={classification}
-                              className="text-xs px-2.5 py-1"
-                            />
-                          )}
-
-                          {scorePct !== null && (
-                            <div className="text-xs font-medium text-foreground">
-                              Match Score: <span className="font-bold text-sm">{scorePct}%</span>
-                            </div>
-                          )}
-
-                          {confidencePct !== null && (
-                            <div className="text-xs text-muted-foreground">
-                              Confidence: <span className="font-semibold text-foreground">{confidencePct}%</span>
-                            </div>
-                          )}
-
-                          {profile.recommendationLatencyMs && (
-                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              <span>{profile.recommendationLatencyMs}ms</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Recommendation Reasoning */}
-                        {profile.recommendationReason && (
-                          <p className="text-xs text-foreground/90 leading-relaxed bg-background/60 p-2.5 rounded border border-border/60">
-                            {profile.recommendationReason}
-                          </p>
-                        )}
-
-                        {/* PART 7: Score Breakdown Horizontal Bars */}
-                        {profile.recommendationMetadata?.scores && (
-                          <div className="pt-1">
-                            <ScoreBreakdown
-                              scores={profile.recommendationMetadata.scores}
-                              className="max-w-md"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* PROCESSING / PENDING State */}
-                    {isProcessing && (
-                      <div className="flex items-center gap-2.5 text-xs text-muted-foreground py-2">
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
-                        <span>
-                          {recStatus === "PROCESSING"
-                            ? "AI tool-calling agent is parsing and evaluating candidate..."
-                            : "Queued for automatic recommendation processing..."}
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedProfileId(p.id)}
+                    className={`p-3.5 cursor-pointer transition-colors text-xs space-y-2 ${
+                      isSelected
+                        ? "bg-muted/80 border-l-2 border-l-blue-600 dark:border-l-blue-400"
+                        : "hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="font-semibold text-foreground truncate max-w-[190px]">
+                          {p.originalFilename}
                         </span>
                       </div>
-                    )}
+                      <StatusBadge type="profileStatus" value={p.status} />
+                    </div>
 
-                    {/* FAILED State with Retry (PART 10) */}
-                    {isFailed && (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-                        <div className="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
-                          <AlertTriangle className="w-4 h-4 shrink-0" />
-                          <span>AI Analysis Failed</span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRetryRecommendation(profile.id)}
-                          disabled={inProgress === "retry"}
-                          className="h-8 text-xs gap-1.5 border-border"
-                        >
-                          <RefreshCw className={`w-3.5 h-3.5 ${inProgress === "retry" ? "animate-spin" : ""}`} />
-                          Retry Analysis
-                        </Button>
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Submitted {formatDate(p.submittedAt)}</span>
+                      {matchPct !== null ? (
+                        <span className="font-mono font-semibold text-foreground">
+                          {matchPct}% Match
+                        </span>
+                      ) : (
+                        <StatusBadge type="recommendationStatus" value={recStatus} />
+                      )}
+                    </div>
+
+                    {classification && (
+                      <div className="pt-0.5">
+                        <StatusBadge
+                          type="decision"
+                          value={classification}
+                          className="text-[10px]"
+                        />
                       </div>
                     )}
                   </div>
+                );
+              })}
+            </div>
+          </div>
 
-                  {/* Bottom Action Footer: View Analysis & Shortlist/Reject Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                    {/* View Analysis Modal Trigger (PART 8) */}
-                    {isCompleted ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedTraceProfile(profile)}
-                        className="text-xs h-8 text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 gap-1.5 self-start"
-                      >
-                        <Cpu className="w-3.5 h-3.5" />
-                        View Analysis & Telemetry
-                      </Button>
-                    ) : (
-                      <div />
+          {/* RIGHT: Selected Candidate Detail Pane */}
+          {selectedProfile && (
+            <div className="lg:col-span-7 rounded-lg border border-border bg-card p-5 space-y-5">
+              {/* Candidate File Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-md bg-muted border border-border flex items-center justify-center text-foreground shrink-0">
+                    <FileText className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base text-foreground break-all">
+                      {selectedProfile.originalFilename}
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      Submitted {formatDate(selectedProfile.submittedAt)}
+                      {selectedProfile.recommendationLatencyMs && (
+                        <span> • Latency: {selectedProfile.recommendationLatencyMs}ms</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <span className="text-xs text-muted-foreground">Decision:</span>
+                  <StatusBadge type="profileStatus" value={selectedProfile.status} />
+                </div>
+              </div>
+
+              {/* SEPARATE SECTION 1: AI Recommendation */}
+              <div className="rounded-lg bg-muted/30 border border-border/80 p-4 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>AI Recommendation</span>
+                  </div>
+                  <StatusBadge
+                    type="recommendationStatus"
+                    value={selectedProfile.recommendationStatus || "PENDING"}
+                  />
+                </div>
+
+                {selectedProfile.recommendationStatus === "COMPLETED" && (
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <StatusBadge
+                        type="decision"
+                        value={
+                          getClassificationFromScore(selectedProfile.recommendationScore) ||
+                          "Recommended"
+                        }
+                        className="text-xs px-2.5 py-1"
+                      />
+
+                      {selectedProfile.recommendationScore !== null && (
+                        <div className="text-xs font-medium text-foreground">
+                          Match Score:{" "}
+                          <span className="font-bold text-sm">
+                            {Math.round(Number(selectedProfile.recommendationScore) * 100)}%
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedProfile.recommendationConfidence !== null && (
+                        <div className="text-xs text-muted-foreground">
+                          Confidence:{" "}
+                          <span className="font-semibold text-foreground">
+                            {Math.round(
+                              Number(selectedProfile.recommendationConfidence) * 100
+                            )}
+                            %
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recommendation Reasoning */}
+                    {selectedProfile.recommendationReason && (
+                      <p className="text-xs text-foreground/90 leading-relaxed bg-background/60 p-3 rounded border border-border/60">
+                        {selectedProfile.recommendationReason}
+                      </p>
                     )}
 
-                    {/* Shortlist & Reject Actions (PART 9) */}
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <Button
-                        size="sm"
-                        variant={profile.status === "SHORTLISTED" ? "default" : "outline"}
-                        onClick={() => handleShortlist(profile.id)}
-                        disabled={inProgress === "shortlist" || inProgress === "reject"}
-                        className={`text-xs h-8 gap-1.5 ${
-                          profile.status === "SHORTLISTED"
-                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                            : "border-border hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700"
-                        }`}
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        {profile.status === "SHORTLISTED" ? "Shortlisted" : "Shortlist"}
-                      </Button>
+                    {/* Score Breakdown Bars (Skills / Experience / Location) */}
+                    {selectedProfile.recommendationMetadata?.scores && (
+                      <div className="pt-1">
+                        <ScoreBreakdown
+                          scores={selectedProfile.recommendationMetadata.scores}
+                          className="max-w-md"
+                        />
+                      </div>
+                    )}
 
+                    {/* Untrusted input explanation banner */}
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground pt-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>
+                        Candidate content is treated as untrusted input. Match scores are calculated using deterministic application rules.
+                      </span>
+                    </div>
+
+                    {/* Evaluation Details Trigger */}
+                    <div className="pt-2 border-t border-border/50">
                       <Button
+                        variant="outline"
                         size="sm"
-                        variant={profile.status === "REJECTED" ? "destructive" : "outline"}
-                        onClick={() => handleReject(profile.id)}
-                        disabled={inProgress === "shortlist" || inProgress === "reject"}
-                        className={`text-xs h-8 gap-1.5 ${
-                          profile.status === "REJECTED"
-                            ? "bg-rose-600 hover:bg-rose-700 text-white"
-                            : "border-border hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-700"
-                        }`}
+                        onClick={() => setSelectedTraceProfile(selectedProfile)}
+                        className="text-xs h-8 gap-1.5 border-border"
                       >
-                        <XCircle className="w-3.5 h-3.5" />
-                        {profile.status === "REJECTED" ? "Rejected" : "Reject"}
+                        <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <span>Evaluation details</span>
                       </Button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                )}
 
-      {/* Agent Trace Drawer/Modal (PART 8) */}
+                {selectedProfile.recommendationStatus === "PROCESSING" && (
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground py-3">
+                    <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+                    <span>Analyzing candidate against opening requirements...</span>
+                  </div>
+                )}
+
+                {selectedProfile.recommendationStatus === "PENDING" && (
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground py-3">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <span>Queued for automated matching analysis...</span>
+                  </div>
+                )}
+
+                {selectedProfile.recommendationStatus === "FAILED" && (
+                  <div className="flex items-center justify-between gap-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-rose-600 dark:text-rose-400">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span>Analysis failed. Candidate parsing was interrupted.</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRetryRecommendation(selectedProfile.id)}
+                      disabled={actionInProgress[selectedProfile.id] === "retry"}
+                      className="h-8 text-xs gap-1.5 border-border"
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${
+                          actionInProgress[selectedProfile.id] === "retry"
+                            ? "animate-spin"
+                            : ""
+                        }`}
+                      />
+                      Retry Analysis
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* SEPARATE SECTION 2: Hiring Decision */}
+              <div className="p-4 rounded-lg border border-border bg-card space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Hiring Decision
+                  </h4>
+                  <StatusBadge type="profileStatus" value={selectedProfile.status} />
+                </div>
+
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Record your managerial evaluation decision. Shortlisting moves the candidate forward for client review.
+                </p>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <Button
+                    size="sm"
+                    variant={selectedProfile.status === "SHORTLISTED" ? "default" : "outline"}
+                    onClick={() => handleShortlist(selectedProfile.id)}
+                    disabled={
+                      actionInProgress[selectedProfile.id] === "shortlist" ||
+                      actionInProgress[selectedProfile.id] === "reject"
+                    }
+                    className={`text-xs h-9 px-4 gap-1.5 font-medium ${
+                      selectedProfile.status === "SHORTLISTED"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        : "border-border hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:text-emerald-700"
+                    }`}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>
+                      {selectedProfile.status === "SHORTLISTED"
+                        ? "Shortlisted"
+                        : "Shortlist"}
+                    </span>
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant={selectedProfile.status === "REJECTED" ? "destructive" : "outline"}
+                    onClick={() => handleReject(selectedProfile.id)}
+                    disabled={
+                      actionInProgress[selectedProfile.id] === "shortlist" ||
+                      actionInProgress[selectedProfile.id] === "reject"
+                    }
+                    className={`text-xs h-9 px-4 gap-1.5 font-medium ${
+                      selectedProfile.status === "REJECTED"
+                        ? "bg-rose-600 hover:bg-rose-700 text-white"
+                        : "border-border hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-700"
+                    }`}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>
+                      {selectedProfile.status === "REJECTED" ? "Rejected" : "Reject"}
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Processing Details Modal (Triggered by 'Evaluation details') */}
       <AgentTraceModal
         isOpen={!!selectedTraceProfile}
         onClose={() => setSelectedTraceProfile(null)}

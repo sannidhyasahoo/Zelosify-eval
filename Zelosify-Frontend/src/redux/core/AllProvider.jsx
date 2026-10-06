@@ -8,13 +8,15 @@ import { TooltipProvider } from "@/components/UI/shadcn/tooltip";
 export default function AllProvider({ children }) {
   return (
     <Provider store={store}>
+      {/* Zelosify is dark-only: lock the theme so no screen ever mixes light/dark */}
       <ThemeProvider
         attribute="class"
-        defaultTheme="system"
-        enableSystem
+        defaultTheme="dark"
+        forcedTheme="dark"
+        enableSystem={false}
         disableTransitionOnChange
       >
-        <TooltipProvider>{children}</TooltipProvider>
+        <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
         <Toaster />
       </ThemeProvider>
     </Provider>

@@ -116,7 +116,24 @@ async function seedKeycloakAndDb() {
 
       const locationHeader = createRes.headers.location;
       keycloakId = locationHeader.split("/").pop();
-      console.log(`✅ Keycloak user created with ID: ${keycloakId}`);
+    }
+
+    // Map Keycloak realm role
+    try {
+      const roleRes = await axios.get(
+        `${KEYCLOAK_URL}/admin/realms/${REALM}/roles/${userDef.role}`,
+        { headers: authHeaders }
+      );
+      if (roleRes.data?.id) {
+        await axios.post(
+          `${KEYCLOAK_URL}/admin/realms/${REALM}/users/${keycloakId}/role-mappings/realm`,
+          [roleRes.data],
+          { headers: authHeaders }
+        );
+        console.log(`✅ Keycloak role ${userDef.role} mapped to ${userDef.username}`);
+      }
+    } catch (roleErr: any) {
+      // Non-fatal
     }
 
     // 3. Upsert user in PostgreSQL

@@ -2,87 +2,121 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import MobileMenu from "../MobileMenu";
+import { Menu, X } from "lucide-react";
 
 export default function LandingNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleScrollToSection = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+  const scrollToSection = (id) => {
+    setIsMenuOpen(false);
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
     }
   };
 
   return (
-    <>
-      {/* Floating navbar when scrolled - FIXED CENTERING */}
-      <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.9 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4"
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-3 bg-[#040506]/85 backdrop-blur-md border-b border-[#1b1c1e]">
+      <div className="w-full max-w-6xl flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5">
+          <img
+            src="/assets/logos/main-logo.png"
+            alt="Zelosify"
+            className="h-7 w-auto object-contain"
+          />
+          <span className="text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded bg-[#111214] border border-[#2f3031] text-[#9c9c9d]">
+            Enterprise
+          </span>
+        </Link>
+
+        {/* Desktop Nav Links */}
+        <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-[#9c9c9d]">
+          <button
+            onClick={() => scrollToSection("capabilities")}
+            className="hover:text-white transition-colors"
+          >
+            Capabilities
+          </button>
+          <button
+            onClick={() => scrollToSection("workflow")}
+            className="hover:text-white transition-colors"
+          >
+            Workflow
+          </button>
+          <button
+            onClick={() => scrollToSection("security")}
+            className="hover:text-white transition-colors"
+          >
+            Security & Roles
+          </button>
+        </nav>
+
+        {/* CTA Buttons */}
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/login"
+            className="text-xs font-medium text-[#e6e6e6] hover:text-white px-3 py-1.5 rounded transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/login"
+            className="text-xs font-medium bg-[#e6e6e6] text-[#07080a] hover:bg-white px-3.5 py-1.5 rounded transition-all shadow-sm"
+          >
+            Get started
+          </Link>
+        </div>
+
+        {/* Mobile Menu Toggle */}
+        <button
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="md:hidden p-1.5 rounded text-[#9c9c9d] hover:text-white hover:bg-[#111214]"
+          aria-label="Toggle menu"
         >
-          <nav className="bg-white/90 backdrop-blur-lg shadow-2xl border border-gray-200/50 rounded-2xl px-6 py-3 w-full max-w-4xl">
-            <div className="flex items-center justify-between">
-              {/* Logo */}
-              <Link href="/" className="flex items-center">
-                <img
-                  src="/assets/logos/zelosify_Dark.png"
-                  alt="Zelosify"
-                  className="h-8 w-auto"
-                />
-              </Link>
+          {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
 
-              {/* Mobile Menu */}
-              <div className="flex items-center gap-4">
-                {/* Mobile Menu Button */}
-                <button
-                  onClick={() => setIsMenuOpen(true)}
-                  className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5 text-gray-700"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              {/* CTA Button */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="hidden md:block"
-              >
-                <Link
-                  href="/login"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-2 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  Sign in
-                </Link>
-              </motion.div>
-            </div>
+      {/* Mobile Drawer */}
+      {isMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-[#07080a] border-b border-[#2f3031] p-5 space-y-4">
+          <nav className="flex flex-col gap-3 text-sm text-[#9c9c9d]">
+            <button
+              onClick={() => scrollToSection("capabilities")}
+              className="text-left py-1 hover:text-white"
+            >
+              Capabilities
+            </button>
+            <button
+              onClick={() => scrollToSection("workflow")}
+              className="text-left py-1 hover:text-white"
+            >
+              Workflow
+            </button>
+            <button
+              onClick={() => scrollToSection("security")}
+              className="text-left py-1 hover:text-white"
+            >
+              Security & Roles
+            </button>
           </nav>
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Mobile Menu */}
-      <MobileMenu
-        isMenuOpen={isMenuOpen}
-        closeMenu={() => setIsMenuOpen(false)}
-      />
-    </>
+          <div className="pt-3 border-t border-[#1b1c1e] flex flex-col gap-2">
+            <Link
+              href="/login"
+              className="text-center text-sm py-2 text-white bg-[#111214] rounded border border-[#2f3031]"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/login"
+              className="text-center text-sm py-2 font-medium bg-[#e6e6e6] text-[#07080a] rounded"
+            >
+              Get started
+            </Link>
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

@@ -33,19 +33,17 @@ export default function UserDashboardlayout({ children }) {
   return (
     <>
       {/* Overlay blurred warning */}
-      <div className="fixed h-screen w-full inset-0 lg:hidden flex items-center justify-center bg-black/70 backdrop-blur-md z-50">
-        <div className="bg-white p-8 rounded-lg shadow-2xl text-center max-w-md relative overflow-hidden mx-4">
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-white opacity-90" />
-          <div className="relative z-10">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">
-              Optimized for Larger Screens
-            </h2>
-            <p className="text-base text-gray-600">
-              This site is designed for laptops and desktops to ensure the best
-              experience. Please visit on a larger screen for full
-              functionality.
-            </p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-xl lg:hidden">
+        <div className="relative w-full max-w-md rounded-card border border-border/80 bg-card p-7 text-center shadow-float">
+          <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-coral/30 bg-coral/10 text-coral">
+            <span className="h-2 w-2 rounded-full bg-coral animate-pulse" />
           </div>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            Desktop Optimized Workspace
+          </h2>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Zelosify contract intelligence is designed for high-resolution desktop and laptop displays. Please expand your browser window or switch to a desktop screen.
+          </p>
         </div>
       </div>
 

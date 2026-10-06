@@ -41,24 +41,22 @@ export const SidebarMenuSubItem = memo(
         <button
           onClick={handleClick}
           className={`
-          w-full rounded-md flex items-center gap-2 px-3 py-2 text-sm
+          w-full rounded-lg flex items-center gap-2 px-2.5 py-1.5 text-xs transition-colors
           ${
             isActive
-              ? "bg-blue-50 text-blue-600 font-medium dark:bg-blue-900/20 dark:text-blue-400"
-              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100"
+              ? "bg-white/[0.08] text-white font-medium border border-border/80 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+              : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground border border-transparent"
           }
         `}
         >
           {item.icon && (
             <item.icon
-              className={`h-5 w-5 ${
-                isActive
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 dark:text-gray-400"
+              className={`h-3.5 w-3.5 shrink-0 transition-colors ${
+                isActive ? "text-coral" : "text-muted-foreground"
               }`}
             />
           )}
-          {isOpen && <span>{item.title}</span>}
+          {isOpen && <span className="truncate">{item.title}</span>}
         </button>
       </li>
     );

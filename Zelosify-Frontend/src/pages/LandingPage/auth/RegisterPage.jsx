@@ -1,15 +1,55 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { motion } from "framer-motion";
-import { FcGoogle } from "react-icons/fc";
-import { BsMicrosoft } from "react-icons/bs";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import SocialButton from "@/components/UI/SocialButton";
-import axiosInstance from "@/utils/Axios/AxiosInstance";
+import { useCallback, useState, useEffect } from "react";
+import { Eye, EyeOff, Loader2, Briefcase, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
+import axiosInstance from "@/utils/Axios/AxiosInstance";
+import { AuthCard, FormError, Field } from "@/components/Auth/AuthCard";
+
+const ROLE_OPTIONS = [
+  {
+    value: "IT_VENDOR",
+    label: "IT Vendor",
+    description: "Submit candidates to open roles",
+    icon: Briefcase,
+  },
+  {
+    value: "HIRING_MANAGER",
+    label: "Hiring Manager",
+    description: "Review candidates and decide",
+    icon: ClipboardCheck,
+  },
+];
+
+function PasswordInput({ id, name, value, onChange, show, onToggle, ...rest }) {
+  return (
+    <div className="relative">
+      <input
+        id={id}
+        name={name}
+        type={show ? "text" : "password"}
+        required
+        value={value}
+        onChange={onChange}
+        suppressHydrationWarning
+        className="field pr-10"
+        {...rest}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        suppressHydrationWarning
+        aria-label={show ? "Hide password" : "Show password"}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
 
 export default function Register() {
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -18,15 +58,19 @@ export default function Register() {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    companyName: "",
-    department: "",
-    role: "USER",
+    companyName: "Bruce Wayne Corp",
+    department: "Engineering",
+    role: "IT_VENDOR",
   });
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleChange = useCallback((e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -53,44 +97,40 @@ export default function Register() {
 
       setIsLoading(true);
       try {
-        console.log("Submitting registration for:", formData.username);
         const requestData = {
-          username: formData.username,
-          email: formData.email,
+          username: formData.username.trim(),
+          email: formData.email.trim(),
           password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phoneNumber: formData.phoneNumber,
-          companyName: formData.companyName,
-          department: formData.department,
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          phoneNumber: formData.phoneNumber.trim(),
+          companyName: formData.companyName.trim(),
+          department: formData.department.trim(),
           role: formData.role,
         };
 
         const res = await axiosInstance.post("/auth/register", requestData);
-        console.log("Registration response:", res.data);
 
         localStorage.setItem(
           "totpSetup",
           JSON.stringify({
             qrCode: res.data.qrCode,
+            otpAuthUrl: res.data.otpAuthUrl,
+            email: formData.email.trim(),
           })
         );
 
         window.location.href = "/setup-totp";
       } catch (err) {
-        console.error("Registration error:", err);
-
         if (err.response) {
-          const { status, data } = err.response;
-          console.error(`Registration error status: ${status}, message:`, data);
-
-          if (status === 400 && data.message === "User already exists.") {
-            setError(
-              "Username or email already in use. Please choose another."
-            );
-          } else {
-            setError(data?.message || "Registration failed. Please try again.");
-          }
+          const { data } = err.response;
+          const errorMessage =
+            data?.message ||
+            data?.error ||
+            (typeof data === "string"
+              ? data
+              : "Registration failed. Please check your details.");
+          setError(errorMessage);
         } else {
           setError(
             "Network error. Please check your connection and try again."
@@ -103,257 +143,205 @@ export default function Register() {
     [formData, validateForm]
   );
 
-  const handleGoogleLogin = useCallback(async () => {
-    try {
-      const resp = await axiosInstance.get("/auth/google/login");
-      window.location.href = resp.data.authUrl;
-    } catch (err) {
-      setError("Failed to initiate Google login");
-    }
-  }, []);
-
-  const handleMicrosoftLogin = useCallback(async () => {
-    try {
-      const resp = await axiosInstance.get("/auth/microsoft/login");
-      window.location.href = resp.data.authUrl;
-    } catch (err) {
-      setError("Failed to initiate Microsoft login");
-    }
-  }, []);
+  if (!mounted) {
+    return (
+      <div className="flex min-h-[420px] items-center justify-center rounded-card-lg border border-border/70 bg-card/80">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg"
-    >
-      <div className="flex flex-col justify-center items-center gap-2">
-        <img
-          src={"/assets/logos/zelosify_Dark.png"}
-          alt="Zelosify Dark Logo"
-          width={120}
-          height={40}
-        />
-
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
-          Create Account
-        </h1>
-      </div>
-
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-sm"
-        >
-          {error}
-        </motion.div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-              Username
-            </label>
-            <input
-              name="username"
-              required
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-              Email
-            </label>
-            <input
-              name="email"
-              type="email"
-              required
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              name="password"
-              type={showPassword ? "text" : "password"}
-              required
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
-            >
-              {showPassword ? (
-                <AiOutlineEyeInvisible className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-              ) : (
-                <AiOutlineEye className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Confirm Password
-          </label>
-          <div className="relative">
-            <input
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              required
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
-            >
-              {showConfirmPassword ? (
-                <AiOutlineEyeInvisible className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-              ) : (
-                <AiOutlineEye className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-              First Name
-            </label>
-            <input
-              name="firstName"
-              required
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-              Last Name
-            </label>
-            <input
-              name="lastName"
-              required
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Phone Number
-          </label>
-          <input
-            name="phoneNumber"
-            required
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Company Name
-          </label>
-          <input
-            name="companyName"
-            required
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Department
-          </label>
-          <input
-            name="department"
-            required
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-            Role
-          </label>
-          <select
-            name="role"
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent dark:bg-gray-900 dark:text-white transition-colors duration-200"
-          >
-            <option value="USER">User</option>
-            <option value="MANAGER">Manager</option>
-            <option value="SENIOR_MANAGER">Senior Manager</option>
-            <option value="ADMIN">Admin</option>
-          </select>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-black dark:bg-white text-white dark:text-black py-2 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 disabled:opacity-50"
-        >
-          {isLoading ? "Loading..." : "Create Account"}
-        </motion.button>
-      </form>
-
-      <div className="mt-6 space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-              Or continue with
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <SocialButton
-            icon={FcGoogle}
-            onClick={handleGoogleLogin}
-            label="Sign up with Google"
-          />
-          <SocialButton
-            icon={BsMicrosoft}
-            onClick={handleMicrosoftLogin}
-            label="Sign up with Microsoft"
-          />
-        </div>
-      </div>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+    <AuthCard
+      eyebrow="Get started"
+      title="Create your account"
+      subtitle="Set up your Zelosify workspace in a minute."
+      footer={
+        <>
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
           >
             Sign in
           </Link>
-        </p>
-      </div>
-    </motion.div>
+        </>
+      }
+    >
+      <FormError>{error}</FormError>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Role picker */}
+        <fieldset>
+          <legend className="field-label">I am a…</legend>
+          <div className="grid grid-cols-2 gap-3">
+            {ROLE_OPTIONS.map(({ value, label, description, icon: Icon }) => {
+              const active = formData.role === value;
+              return (
+                <label
+                  key={value}
+                  className={`group relative flex cursor-pointer flex-col gap-1.5 rounded-xl border p-3.5 transition-all ${
+                    active
+                      ? "border-coral/50 bg-coral/[0.07] shadow-[0_0_0_1px_rgba(255,99,99,0.25)]"
+                      : "border-border/70 bg-white/[0.02] hover:border-border hover:bg-white/[0.04]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="role"
+                    value={value}
+                    checked={active}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <Icon
+                    className={`h-4 w-4 ${
+                      active ? "text-coral" : "text-muted-foreground"
+                    }`}
+                  />
+                  <span className="text-[13px] font-medium text-foreground">
+                    {label}
+                  </span>
+                  <span className="text-[12px] leading-snug text-muted-foreground">
+                    {description}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="First name" htmlFor="firstName">
+            <input
+              id="firstName"
+              name="firstName"
+              autoComplete="given-name"
+              required
+              value={formData.firstName}
+              onChange={handleChange}
+              suppressHydrationWarning
+              className="field"
+            />
+          </Field>
+          <Field label="Last name" htmlFor="lastName">
+            <input
+              id="lastName"
+              name="lastName"
+              autoComplete="family-name"
+              required
+              value={formData.lastName}
+              onChange={handleChange}
+              suppressHydrationWarning
+              className="field"
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Username" htmlFor="username">
+            <input
+              id="username"
+              name="username"
+              autoComplete="username"
+              required
+              value={formData.username}
+              onChange={handleChange}
+              suppressHydrationWarning
+              className="field"
+            />
+          </Field>
+          <Field label="Phone" htmlFor="phoneNumber">
+            <input
+              id="phoneNumber"
+              name="phoneNumber"
+              type="tel"
+              autoComplete="tel"
+              required
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              suppressHydrationWarning
+              className="field"
+            />
+          </Field>
+        </div>
+
+        <Field label="Work email" htmlFor="email">
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="you@company.com"
+            suppressHydrationWarning
+            className="field"
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Company" htmlFor="companyName">
+            <input
+              id="companyName"
+              name="companyName"
+              autoComplete="organization"
+              required
+              value={formData.companyName}
+              onChange={handleChange}
+              suppressHydrationWarning
+              className="field"
+            />
+          </Field>
+          <Field label="Department" htmlFor="department">
+            <input
+              id="department"
+              name="department"
+              required
+              value={formData.department}
+              onChange={handleChange}
+              suppressHydrationWarning
+              className="field"
+            />
+          </Field>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Password" htmlFor="password" hint="At least 8 characters">
+            <PasswordInput
+              id="password"
+              name="password"
+              autoComplete="new-password"
+              value={formData.password}
+              onChange={handleChange}
+              show={showPassword}
+              onToggle={() => setShowPassword(!showPassword)}
+            />
+          </Field>
+          <Field label="Confirm password" htmlFor="confirmPassword">
+            <PasswordInput
+              id="confirmPassword"
+              name="confirmPassword"
+              autoComplete="new-password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              show={showConfirmPassword}
+              onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+            />
+          </Field>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          suppressHydrationWarning
+          className="btn-primary mt-2 h-10 w-full text-sm"
+        >
+          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isLoading ? "Creating account…" : "Create account"}
+        </button>
+      </form>
+    </AuthCard>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   MapPin,
@@ -20,6 +21,7 @@ import PaginationControls from "@/components/recruitment/PaginationControls";
 import { Input } from "@/components/UI/shadcn/input";
 
 export default function HiringManagerOpeningsPage() {
+  const router = useRouter();
   const [openings, setOpenings] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 });
   const [isLoading, setIsLoading] = useState(true);
@@ -67,8 +69,8 @@ export default function HiringManagerOpeningsPage() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       <PageHeader
-        title="Assigned Openings"
-        description="Review candidate profiles, AI match scores, and make shortlist/rejection decisions."
+        title="My Openings"
+        description="Review candidate submissions and make informed contract hiring decisions."
       >
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mt-2">
           <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-80">
@@ -81,8 +83,8 @@ export default function HiringManagerOpeningsPage() {
               className="pl-9 h-9 text-xs"
             />
           </form>
-          <div className="text-xs text-muted-foreground">
-            {pagination.total} {pagination.total === 1 ? "opening" : "openings"} assigned
+          <div className="text-xs text-muted-foreground font-mono">
+            {pagination.total} {pagination.total === 1 ? "opening" : "openings"} active in queue
           </div>
         </div>
       </PageHeader>
@@ -92,14 +94,14 @@ export default function HiringManagerOpeningsPage() {
         <LoadingSkeleton type="table" count={6} />
       ) : error ? (
         <ErrorState
-          title="Failed to Load Assigned Openings"
+          title="Failed to Load Openings"
           message={error}
           onRetry={() => loadOpenings(pagination.page, searchQuery)}
         />
       ) : openings.length === 0 ? (
         <EmptyState
           icon={Briefcase}
-          title="No assigned openings"
+          title="No open roles in queue"
           description={
             searchQuery
               ? `No openings matched "${searchQuery}".`
@@ -122,11 +124,12 @@ export default function HiringManagerOpeningsPage() {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-muted/40 border-b border-border text-muted-foreground font-medium">
-                    <th className="py-3 px-4">Role Title</th>
+                    <th className="py-3 px-4">Role</th>
                     <th className="py-3 px-4">Location</th>
                     <th className="py-3 px-4">Experience</th>
-                    <th className="py-3 px-4">Opening Status</th>
+                    <th className="py-3 px-4">Contract Type</th>
                     <th className="py-3 px-4 text-center">Candidates</th>
+                    <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Action</th>
                   </tr>
                 </thead>
@@ -136,47 +139,59 @@ export default function HiringManagerOpeningsPage() {
                       key={opening.id}
                       className="hover:bg-muted/20 transition-colors group cursor-pointer"
                       onClick={() => {
-                        window.location.href = `/hiring-manager/openings/${opening.id}`;
+                        router.push(`/hiring-manager/openings/${opening.id}`);
                       }}
                     >
-                      <td className="py-3 px-4 font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         <div className="max-w-xs truncate">{opening.title}</div>
-                        {opening.contractType && (
-                          <span className="text-[11px] font-normal text-muted-foreground">
-                            {opening.contractType}
-                          </span>
+                        {Array.isArray(opening.requiredSkills) && opening.requiredSkills.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {opening.requiredSkills.slice(0, 3).map((s, idx) => (
+                              <span
+                                key={idx}
+                                className="px-1.5 py-0.2 rounded text-[10px] font-normal bg-muted text-muted-foreground border border-border/50"
+                              >
+                                {s}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 shrink-0" />
                           <span>{opening.location || "Remote"}</span>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-muted-foreground">
-                        <div className="flex items-center gap-1">
+                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
                           <Clock className="w-3.5 h-3.5 shrink-0" />
                           <span>
                             {opening.experienceMin ?? 0} - {opening.experienceMax ?? 5}+ yrs
                           </span>
                         </div>
                       </td>
-                      <td className="py-3 px-4">
-                        <StatusBadge type="openingStatus" value={opening.status} />
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
-                          <Users className="w-3 h-3 text-muted-foreground" />
-                          {opening.profilesCount ?? 0}
+                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded text-[11px] bg-muted/60 border border-border/60">
+                          {opening.contractType || "Contract"}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
+                          <Users className="w-3 h-3 text-muted-foreground" />
+                          <span>{opening.profilesCount ?? 0}</span>
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <StatusBadge type="openingStatus" value={opening.status} />
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link
                           href={`/hiring-manager/openings/${opening.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline gap-0.5"
+                          className="inline-flex items-center text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline gap-1"
                         >
-                          Review
+                          <span>Review</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </Link>
                       </td>
