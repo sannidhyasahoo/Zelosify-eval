@@ -201,7 +201,7 @@ export class OpeningService {
       prisma.opening.count({
         where: {
           tenantId,
-          ...managerCondition,
+          hiringManagerId,
         },
       }),
     ]);
