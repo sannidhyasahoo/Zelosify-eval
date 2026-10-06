@@ -69,13 +69,84 @@ export async function processRecommendation(
     throw new Error(`Opening associated with profile ${profileId} not found.`);
   }
 
-  // 2. Set recommendationStatus = PROCESSING
-  await prisma.hiringProfile.update({
-    where: { id: profileId },
-    data: {
-      recommendationStatus: RecommendationStatus.PROCESSING,
-    },
-  });
+  // 2. Idempotency Check: Do not rerun COMPLETED profiles automatically
+  if (profile.recommendationStatus === RecommendationStatus.COMPLETED) {
+    console.log(`[RecommendationService] Profile ${profileId} is already COMPLETED. Skipping duplicate evaluation.`);
+    return {
+      profileId: profile.id,
+      openingId: profile.openingId,
+      recommended: profile.recommended ?? false,
+      score: profile.recommendationScore ?? 0,
+      confidence: profile.recommendationConfidence ?? 0,
+      reason: profile.recommendationReason ?? "",
+      decision: profile.recommended ? "Recommended" : "Not Recommended",
+      status: profile.recommendationStatus,
+      latencyMs: profile.recommendationLatencyMs ?? 0,
+      version: profile.recommendationVersion ?? RECOMMENDATION_VERSION,
+    };
+  }
+
+  // Database-level conditional update to claim execution lock atomically (PENDING or FAILED -> PROCESSING)
+  if (typeof (prisma as any).hiringProfile.updateMany === "function") {
+    const claimResult = await (prisma as any).hiringProfile.updateMany({
+      where: {
+        id: profileId,
+        isDeleted: false,
+        recommendationStatus: {
+          in: [RecommendationStatus.PENDING, RecommendationStatus.FAILED],
+        },
+      },
+      data: {
+        recommendationStatus: RecommendationStatus.PROCESSING,
+      },
+    });
+
+    if (claimResult.count === 0) {
+      // Lock could not be claimed: profile is either already PROCESSING concurrently, or reached COMPLETED
+      const current = await prisma.hiringProfile.findUnique({ where: { id: profileId } });
+      if (!current || current.isDeleted) {
+        throw new Error(`Profile with ID ${profileId} not found or deleted.`);
+      }
+
+      if (current.recommendationStatus === RecommendationStatus.PROCESSING) {
+        console.log(`[RecommendationService] Profile ${profileId} is already PROCESSING. Skipping duplicate run.`);
+        return {
+          profileId: current.id,
+          openingId: current.openingId,
+          recommended: false,
+          score: 0,
+          confidence: 0,
+          reason: "Profile is currently being processed.",
+          decision: "Processing",
+          status: RecommendationStatus.PROCESSING,
+          latencyMs: 0,
+          version: RECOMMENDATION_VERSION,
+        };
+      }
+
+      if (current.recommendationStatus === RecommendationStatus.COMPLETED) {
+        return {
+          profileId: current.id,
+          openingId: current.openingId,
+          recommended: current.recommended ?? false,
+          score: current.recommendationScore ?? 0,
+          confidence: current.recommendationConfidence ?? 0,
+          reason: current.recommendationReason ?? "",
+          decision: current.recommended ? "Recommended" : "Not Recommended",
+          status: current.recommendationStatus,
+          latencyMs: current.recommendationLatencyMs ?? 0,
+          version: current.recommendationVersion ?? RECOMMENDATION_VERSION,
+        };
+      }
+    }
+  } else {
+    await prisma.hiringProfile.update({
+      where: { id: profileId },
+      data: {
+        recommendationStatus: RecommendationStatus.PROCESSING,
+      },
+    });
+  }
 
   // Resolve model
   let model: BaseChatModel;
@@ -229,6 +300,21 @@ export async function processRecommendation(
     };
   }
 
+  // Construct safe recommendation metadata (never storing raw resume, prompt, or reasoning)
+  const recommendationMetadata = {
+    scores: {
+      skills: agentResult.scoringResult.skillMatchScore,
+      experience: agentResult.scoringResult.experienceMatchScore,
+      location: agentResult.scoringResult.locationMatchScore,
+    },
+    tools: agentResult.toolsInvoked || [],
+    model: modelName,
+    tokenUsage: agentResult.tokenUsage ?? null,
+    retryCount: agentResult.retryCount || 0,
+    parsingLatencyMs,
+    matchingLatencyMs,
+  };
+
   // 5. Persist recommendation atomically inside a Prisma transaction
   const updatedProfile = await (prisma as any).$transaction(async (tx: any) => {
     return await tx.hiringProfile.update({
@@ -241,6 +327,7 @@ export async function processRecommendation(
         recommendationVersion: RECOMMENDATION_VERSION,
         recommendationConfidence: agentResult.llmOutput.confidence,
         recommendedAt: new Date(),
+        recommendationMetadata,
         recommendationStatus: RecommendationStatus.COMPLETED,
       },
     });
@@ -257,6 +344,7 @@ export async function processRecommendation(
     totalLatencyMs,
     finalScore: agentResult.scoringResult.finalScore,
     model: modelName,
+    tokenUsage: agentResult.tokenUsage ? { totalTokens: agentResult.tokenUsage } : undefined,
     retryCount: agentResult.retryCount || 0,
   });
 

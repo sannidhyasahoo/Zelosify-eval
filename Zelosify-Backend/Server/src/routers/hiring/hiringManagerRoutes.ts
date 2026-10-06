@@ -5,6 +5,9 @@ import {
   fetchData,
   listHiringManagerOpenings,
   getHiringManagerOpeningProfiles,
+  shortlistCandidateProfile,
+  rejectCandidateProfile,
+  retryCandidateRecommendation,
 } from "../../controllers/controllers.js";
 
 const router = Router();
@@ -54,6 +57,42 @@ router.get(
   authenticateUser as RequestHandler,
   authorizeRole("HIRING_MANAGER") as RequestHandler,
   getHiringManagerOpeningProfiles as RequestHandler
+);
+
+/**
+ * POST /api/v1/hiring-manager/profiles/:id/shortlist
+ * Shortlists an active candidate profile owned by the hiring manager
+ * @requires HIRING_MANAGER role
+ */
+router.post(
+  "/profiles/:id/shortlist",
+  authenticateUser as RequestHandler,
+  authorizeRole("HIRING_MANAGER") as RequestHandler,
+  shortlistCandidateProfile as RequestHandler
+);
+
+/**
+ * POST /api/v1/hiring-manager/profiles/:id/reject
+ * Rejects an active candidate profile owned by the hiring manager
+ * @requires HIRING_MANAGER role
+ */
+router.post(
+  "/profiles/:id/reject",
+  authenticateUser as RequestHandler,
+  authorizeRole("HIRING_MANAGER") as RequestHandler,
+  rejectCandidateProfile as RequestHandler
+);
+
+/**
+ * POST /api/v1/hiring-manager/profiles/:id/recommendation/retry
+ * Retries a FAILED candidate recommendation
+ * @requires HIRING_MANAGER role
+ */
+router.post(
+  "/profiles/:id/recommendation/retry",
+  authenticateUser as RequestHandler,
+  authorizeRole("HIRING_MANAGER") as RequestHandler,
+  retryCandidateRecommendation as RequestHandler
 );
 
 export default router;

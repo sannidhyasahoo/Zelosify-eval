@@ -60,6 +60,14 @@ export const AgentStateAnnotation = Annotation.Root({
   decision: Annotation<DecisionPolicyResult | undefined>({
     reducer: (_, update) => update,
   }),
+  toolsInvoked: Annotation<string[]>({
+    reducer: (curr, update) => Array.from(new Set([...(curr || []), ...(update || [])])),
+    default: () => [],
+  }),
+  tokenUsage: Annotation<number | null>({
+    reducer: (_, update) => update,
+    default: () => null,
+  }),
   retryCount: Annotation<number>({
     reducer: (_, update) => update,
     default: () => 0,
@@ -139,8 +147,20 @@ Operating Rules & Security Policy:
     // 2. Agent invocation node
     .addNode("agent", async (state) => {
       const response = await modelWithTools.invoke(state.messages);
+
+      let extractedTokens: number | null = null;
+      const respAny = response as any;
+      if (typeof respAny?.usage_metadata?.total_tokens === "number") {
+        extractedTokens = respAny.usage_metadata.total_tokens;
+      } else if (typeof respAny?.response_metadata?.tokenUsage?.totalTokens === "number") {
+        extractedTokens = respAny.response_metadata.tokenUsage.totalTokens;
+      } else if (typeof respAny?.response_metadata?.usage?.total_tokens === "number") {
+        extractedTokens = respAny.response_metadata.usage.total_tokens;
+      }
+
       return {
         messages: [response],
+        tokenUsage: extractedTokens !== null ? extractedTokens : state.tokenUsage,
       };
     })
 
@@ -150,10 +170,12 @@ Operating Rules & Security Policy:
       const toolCalls = (lastMessage as any)?.tool_calls || [];
 
       const toolMessages: BaseMessage[] = [];
+      const newlyInvokedTools: string[] = [];
       let updatedStructuredResume = state.structuredResume;
       let updatedScoringResult = state.scoringResult;
 
       for (const call of toolCalls) {
+        newlyInvokedTools.push(call.name);
         const selectedTool = toolsMap.get(call.name);
         if (!selectedTool) {
           toolMessages.push(
@@ -200,6 +222,7 @@ Operating Rules & Security Policy:
         messages: toolMessages,
         structuredResume: updatedStructuredResume,
         scoringResult: updatedScoringResult,
+        toolsInvoked: newlyInvokedTools,
       };
     })
 

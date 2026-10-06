@@ -44,10 +44,15 @@ export {
 // ===== HIRING MANAGEMENT =====
 export { fetchData } from "./hiring/hiringProfileController.js";
 
-// Hiring manager openings
+// Hiring manager openings and profile decisions
 export {
   listHiringManagerOpenings,
   getHiringManagerOpeningProfiles,
 } from "./hiring/hiringOpeningController.js";
+export {
+  shortlistCandidateProfile,
+  rejectCandidateProfile,
+  retryCandidateRecommendation,
+} from "./hiring/hiringProfileController.js";
 
 

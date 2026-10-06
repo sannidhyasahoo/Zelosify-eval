@@ -97,6 +97,7 @@ model HiringProfile {
   recommendationVersion    String?
   recommendationConfidence Float?
   recommendedAt            DateTime?
+  recommendationMetadata   Json?
 
   recommendationStatus     RecommendationStatus @default(PENDING)
 

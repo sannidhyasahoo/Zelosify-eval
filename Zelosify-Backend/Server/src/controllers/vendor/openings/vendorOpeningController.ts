@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AuthenticatedRequest } from "../../../types/typeIndex.js";
 import { openingService } from "../../../services/opening/openingService.js";
+import { recommendationDispatcher } from "../../../services/recommendation/recommendationDispatcher.js";
 
 /**
  * Controller for IT_VENDOR opening endpoints
@@ -290,6 +291,12 @@ export const uploadCandidateProfiles = async (
         error: "Failed to submit profiles",
       });
       return;
+    }
+
+    // Dispatch asynchronous recommendation processing without awaiting LLM completion
+    const createdProfileIds = (result.profiles || []).map((p: any) => p.id);
+    if (createdProfileIds.length > 0) {
+      recommendationDispatcher.dispatch(createdProfileIds);
     }
 
     res.status(201).json({

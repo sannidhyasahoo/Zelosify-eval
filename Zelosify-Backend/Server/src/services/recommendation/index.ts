@@ -6,3 +6,4 @@ export * from "./modelFactory.js";
 export * from "./agentGraph.js";
 export * from "./recommendationLogger.js";
 export * from "./recommendationService.js";
+export * from "./recommendationDispatcher.js";

@@ -274,6 +274,7 @@ export class OpeningService {
             recommendationVersion: true,
             recommendedAt: true,
             recommendationStatus: true,
+            recommendationMetadata: true,
             isDeleted: true,
           },
           orderBy: {
