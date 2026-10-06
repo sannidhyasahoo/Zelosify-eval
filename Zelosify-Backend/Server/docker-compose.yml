@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: testrun
       POSTGRES_DB: zelosify_recruit_test
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     ports:
       - "5445:5432" # Expose internal 5432 on host port 5445 (Port 5445 can be used to connect psql outside the container)
     networks:

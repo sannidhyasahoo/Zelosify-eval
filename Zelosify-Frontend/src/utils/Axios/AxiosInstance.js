@@ -1,15 +1,23 @@
 // src/utils/axiosInstance.js
 import axios from "axios";
 
+const rawBaseUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api/v1";
+const baseURL = rawBaseUrl.endsWith("/api/v1")
+  ? rawBaseUrl
+  : `${rawBaseUrl.replace(/\/+$/, "")}/api/v1`;
+
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000",
+  baseURL,
   withCredentials: true,
 });
 
-// Add request interceptor for logging
+// Add request interceptor to normalize /api/v1 paths and prevent duplication
 axiosInstance.interceptors.request.use(
   (config) => {
-    // console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
+    if (config.url && config.url.startsWith("/api/v1/")) {
+      config.url = config.url.replace(/^\/api\/v1/, "");
+    }
     return config;
   },
   (error) => {

@@ -71,8 +71,9 @@ async function startServer() {
 
     // Mount API route handlers with versioned endpoints
 
-    // User authentication and authorization
+    // User authentication and authorization (with both /api/v1/auth and /auth aliases)
     app.use("/api/v1/auth", authRoutes);
+    app.use("/auth", authRoutes);
 
     // AWS integration
     app.use("/api/v1/aws", awsRouter);
