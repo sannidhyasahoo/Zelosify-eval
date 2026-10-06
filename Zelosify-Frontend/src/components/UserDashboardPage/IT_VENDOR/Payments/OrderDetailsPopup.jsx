@@ -1,5 +1,9 @@
+"use client";
+
 import { Mail, Printer, Upload, X, FileText } from "lucide-react";
 import { Button } from "@/components/UI/shadcn/button";
+import { exportContractStatement, triggerPrint } from "@/utils/exportUtils";
+import { toast } from "sonner";
 
 export default function OrderDetailsPopup({ order, onClose }) {
   const contractId = order?.id || "#192541";
@@ -8,6 +12,20 @@ export default function OrderDetailsPopup({ order, onClose }) {
   const email = order?.people || "contractor@company.com";
   const total = order?.total || "$3,127.00";
   const status = order?.status || "Active";
+
+  const handleExport = () => {
+    try {
+      exportContractStatement(order);
+      toast.success(`Exported Statement of Work for contract ${contractId}`);
+    } catch {
+      toast.error("Failed to export contract statement");
+    }
+  };
+
+  const handlePrint = () => {
+    toast.info("Opening system print dialog...");
+    triggerPrint();
+  };
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in-0 duration-150">
@@ -76,8 +94,21 @@ export default function OrderDetailsPopup({ order, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 p-3.5 border-t border-border/80 bg-muted/30">
-          <Button variant="outline" size="sm" onClick={onClose} className="gap-1.5 text-xs">
-            <Upload className="h-3.5 w-3.5" /> Export PDF
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrint}
+            className="gap-1.5 text-xs"
+          >
+            <Printer className="h-3.5 w-3.5" /> Print
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            className="gap-1.5 text-xs"
+          >
+            <Upload className="h-3.5 w-3.5" /> Export SOW
           </Button>
           <Button variant="default" size="sm" onClick={onClose} className="text-xs">
             Done

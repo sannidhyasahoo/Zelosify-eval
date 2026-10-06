@@ -22,10 +22,13 @@ import {
   ShieldCheck,
   Search,
   ExternalLink,
+  Printer,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/UI/shadcn/button";
 import { Input } from "@/components/UI/shadcn/input";
+import { exportToCSV, triggerPrint } from "@/utils/exportUtils";
 import {
   getHiringManagerOpeningProfiles,
   shortlistProfile,
@@ -217,6 +220,38 @@ export default function HiringManagerOpeningDetailPage({ params }) {
     }
   };
 
+  const handleExportCandidates = () => {
+    if (!profiles || profiles.length === 0) {
+      toast.error("No candidates to export");
+      return;
+    }
+    const cols = [
+      { label: "Candidate File", key: "originalFilename" },
+      { label: "Status", key: "status" },
+      {
+        label: "Recommendation",
+        key: (p) => getClassificationFromScore(p.recommendationScore) || p.recommendationStatus || "N/A",
+      },
+      {
+        label: "Match Score",
+        key: (p) => (p.recommendationScore != null ? `${Math.round(Number(p.recommendationScore) * 100)}%` : "N/A"),
+      },
+      {
+        label: "Confidence",
+        key: (p) => (p.recommendationConfidence != null ? `${Math.round(Number(p.recommendationConfidence) * 100)}%` : "N/A"),
+      },
+      { label: "Vendor", key: (p) => p.vendor?.name || p.vendor?.companyName || "N/A" },
+      { label: "Submitted", key: (p) => (p.submittedAt ? new Date(p.submittedAt).toLocaleDateString() : "N/A") },
+    ];
+    exportToCSV(`candidates_${opening?.title?.replace(/[^a-zA-Z0-9_-]/g, "_") || "opening"}.csv`, profiles, cols);
+    toast.success(`Exported ${profiles.length} candidates to CSV`);
+  };
+
+  const handlePrintOverview = () => {
+    toast.info("Opening system print dialog...");
+    triggerPrint();
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
     try {
@@ -285,7 +320,29 @@ export default function HiringManagerOpeningDetailPage({ params }) {
       {/* Page Header */}
       <PageHeader
         title={opening.title}
-        actions={<StatusBadge type="openingStatus" value={opening.status} />}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintOverview}
+              className="gap-1.5 h-8 text-xs font-mono border-border bg-card/60 hover:bg-card"
+            >
+              <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Print</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCandidates}
+              className="gap-1.5 h-8 text-xs font-mono border-border bg-card/60 hover:bg-card"
+            >
+              <Upload className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
+              <span>Export CSV</span>
+            </Button>
+            <StatusBadge type="openingStatus" value={opening.status} />
+          </div>
+        }
       >
         <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs text-muted-foreground mt-1 font-mono">
           <div className="flex items-center gap-1.5">

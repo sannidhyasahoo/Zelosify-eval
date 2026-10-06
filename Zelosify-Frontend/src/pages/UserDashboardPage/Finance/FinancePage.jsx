@@ -1,3 +1,5 @@
+"use client";
+
 import FinanceLayout from "@/components/UserDashboardPage/Finance/FinanceLayout";
 
 export default function FinancePage() {

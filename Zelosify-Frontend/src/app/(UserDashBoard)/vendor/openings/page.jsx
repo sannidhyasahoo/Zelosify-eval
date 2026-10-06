@@ -11,7 +11,12 @@ import {
   User,
   ChevronRight,
   Search,
+  Printer,
+  Upload,
 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/UI/shadcn/button";
+import { exportToCSV, triggerPrint } from "@/utils/exportUtils";
 import { getVendorOpenings } from "@/lib/api/recruitmentApi";
 import StatusBadge from "@/components/recruitment/StatusBadge";
 import PageHeader from "@/components/recruitment/PageHeader";
@@ -80,11 +85,56 @@ export default function VendorOpeningsPage() {
     }
   };
 
+  const handleExportOpenings = () => {
+    if (!openings || openings.length === 0) {
+      toast.error("No openings to export");
+      return;
+    }
+    const cols = [
+      { label: "Role Title", key: "title" },
+      { label: "Location", key: (o) => o.location || "Remote" },
+      { label: "Experience", key: (o) => `${o.experienceMin ?? 0} - ${o.experienceMax ?? 5}+ yrs` },
+      { label: "Contract Type", key: (o) => o.contractType || "Contract" },
+      { label: "Candidates Submitted", key: (o) => o.profilesCount ?? 0 },
+      { label: "Status", key: "status" },
+      { label: "Posted Date", key: (o) => formatDate(o.postedDate) },
+    ];
+    exportToCSV("vendor_openings.csv", openings, cols);
+    toast.success(`Exported ${openings.length} openings to CSV`);
+  };
+
+  const handlePrint = () => {
+    toast.info("Opening system print dialog...");
+    triggerPrint();
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       <PageHeader
         title="Contract Openings"
         description="Find active roles and submit candidates for review."
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="gap-1.5 h-8 text-xs font-mono border-border bg-card/60 hover:bg-card"
+            >
+              <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Print</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportOpenings}
+              className="gap-1.5 h-8 text-xs font-mono border-border bg-card/60 hover:bg-card"
+            >
+              <Upload className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
+              <span>Export CSV</span>
+            </Button>
+          </div>
+        }
       >
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mt-2">
           <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-80">

@@ -17,9 +17,12 @@ import {
   UploadCloud,
   ChevronRight,
   AlertTriangle,
+  Printer,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/UI/shadcn/button";
+import { exportToCSV, triggerPrint } from "@/utils/exportUtils";
 import {
   Dialog,
   DialogContent,
@@ -122,6 +125,25 @@ export default function VendorOpeningDetailPage({ params }) {
   const handleUploadSuccess = () => {
     setIsUploadModalOpen(false);
     loadOpeningData();
+  };
+
+  const handleExportCandidates = () => {
+    if (!profiles || profiles.length === 0) {
+      toast.error("No candidate profiles to export");
+      return;
+    }
+    const cols = [
+      { label: "Filename", key: "originalFilename" },
+      { label: "Submitted Time", key: (p) => (p.submittedAt ? new Date(p.submittedAt).toLocaleString() : "N/A") },
+      { label: "Status", key: (p) => p.recommendationStatus || "PENDING" },
+    ];
+    exportToCSV(`candidates_${opening?.title?.replace(/[^a-zA-Z0-9_-]/g, "_") || "opening"}.csv`, profiles, cols);
+    toast.success(`Exported ${profiles.length} candidate profiles to CSV`);
+  };
+
+  const handlePrintOverview = () => {
+    toast.info("Opening system print dialog...");
+    triggerPrint();
   };
 
   const formatDate = (dateStr) => {
@@ -272,15 +294,35 @@ export default function VendorOpeningDetailPage({ params }) {
               Candidate resumes submitted by your agency for this position.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsUploadModalOpen(true)}
-            className="h-8 text-xs gap-1.5"
-          >
-            <UploadCloud className="w-3.5 h-3.5" />
-            <span>Upload Profiles</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintOverview}
+              className="h-8 text-xs gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCandidates}
+              className="h-8 text-xs gap-1.5"
+            >
+              <Upload className="w-3.5 h-3.5 rotate-180" />
+              <span>Export CSV</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsUploadModalOpen(true)}
+              className="h-8 text-xs gap-1.5"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Upload Profiles</span>
+            </Button>
+          </div>
         </div>
 
         {profiles.length === 0 ? (
