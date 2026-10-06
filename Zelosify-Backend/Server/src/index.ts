@@ -19,7 +19,6 @@ import authRoutes from "./routers/auth/authRoute.js";
 import awsRouter from "./routers/aws/awsRoute.js";
 import vendorRoutes from "./routers/vendor/vendorRoutes.js";
 import hiringManagerRoutes from "./routers/hiring/hiringManagerRoutes.js";
-import internalRecommendationRoutes from "./routers/internal/recommendationRoutes.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -83,9 +82,6 @@ async function startServer() {
 
     // Hiring manager routes
     app.use("/api/v1/hiring-manager", hiringManagerRoutes);
-
-    // Internal recommendation trigger routes
-    app.use("/api/v1/internal/recommendations", internalRecommendationRoutes);
 
     // Request debugging middleware - logs all incoming requests
     app.use((req, _, next) => {

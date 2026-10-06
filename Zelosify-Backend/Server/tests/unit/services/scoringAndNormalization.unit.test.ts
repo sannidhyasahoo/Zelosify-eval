@@ -109,6 +109,10 @@ describe("PHASE 4: Scoring & Normalization Unit Tests", () => {
       expect(policy1.decision).toBe("Recommended");
       expect(policy1.isRecommended).toBe(true);
 
+      const policy1b = evaluateDecisionPolicy(0.750);
+      expect(policy1b.decision).toBe("Recommended");
+      expect(policy1b.isRecommended).toBe(true);
+
       const policy2 = evaluateDecisionPolicy(0.92);
       expect(policy2.decision).toBe("Recommended");
       expect(policy2.isRecommended).toBe(true);
@@ -119,15 +123,23 @@ describe("PHASE 4: Scoring & Normalization Unit Tests", () => {
       expect(policy1.decision).toBe("Borderline");
       expect(policy1.isRecommended).toBe(false);
 
+      const policy1b = evaluateDecisionPolicy(0.500);
+      expect(policy1b.decision).toBe("Borderline");
+      expect(policy1b.isRecommended).toBe(false);
+
       const policy2 = evaluateDecisionPolicy(0.749);
       expect(policy2.decision).toBe("Borderline");
       expect(policy2.isRecommended).toBe(false);
     });
 
     it("13. not recommended below 0.50", () => {
-      const policy = evaluateDecisionPolicy(0.49);
+      const policy = evaluateDecisionPolicy(0.499);
       expect(policy.decision).toBe("Not Recommended");
       expect(policy.isRecommended).toBe(false);
+
+      const policy49 = evaluateDecisionPolicy(0.49);
+      expect(policy49.decision).toBe("Not Recommended");
+      expect(policy49.isRecommended).toBe(false);
 
       const policyZero = evaluateDecisionPolicy(0);
       expect(policyZero.decision).toBe("Not Recommended");

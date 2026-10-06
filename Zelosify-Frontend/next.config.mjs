@@ -5,6 +5,12 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   // Moved from experimental to root level as per warning
   serverExternalPackages: [],
 

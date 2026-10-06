@@ -21,12 +21,14 @@ export function authorizeRole(requiredrole: string) {
     // If req.user is already authenticated by authenticateUser, check database role directly
     if (req.user) {
       if (req.user.role !== requiredrole) {
-        return res.status(403).json({
+        res.status(403).json({
           message: `Access Denied: User does not have required role ${requiredrole}`,
         });
+        return;
       }
       console.log("Authorize Role Middleware Passed ✅ : ", req.user);
-      return next();
+      next();
+      return;
     }
 
     const token =
@@ -43,11 +45,13 @@ export function authorizeRole(requiredrole: string) {
       const decoded = jwt.decode(token) as any;
       const roles = decoded?.realm_access?.roles || [];
       if (roles.includes(requiredrole)) {
-        return next();
+        next();
+        return;
       }
-      return res.status(403).json({
+      res.status(403).json({
         message: `Access Denied: User does not have required role ${requiredrole}`,
       });
+      return;
     }
 
     jwt.verify(
@@ -56,17 +60,19 @@ export function authorizeRole(requiredrole: string) {
       { algorithms: ["RS256"] },
       async (err, decoded: any) => {
         if (err || typeof decoded !== "object") {
-          return res.status(401).json({
+          res.status(401).json({
             message: "Token verification failed",
             error: err?.message,
           });
+          return;
         }
 
         const role = decoded?.realm_access?.roles || [];
         if (!role.includes(requiredrole)) {
-          return res.status(403).json({
+          res.status(403).json({
             message: `Access Denied: User does not have required role ${requiredrole}`,
           });
+          return;
         }
         console.log("Authorize Role Middleware Passed ✅ : ", req.user);
         next();

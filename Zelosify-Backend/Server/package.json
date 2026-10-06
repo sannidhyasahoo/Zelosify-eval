@@ -15,6 +15,7 @@
     "prisma:reset": "prisma migrate reset",
     "seed:users": "tsx src/scripts/seedTestUsers.ts",
     "test:e2e": "tsx src/scripts/runE2ETests.ts",
+    "test:phase7": "tsx src/scripts/verifyPhase7Suite.ts",
     "test": "vitest --config vitest.config.ts",
     "test:ui": "vitest --config vitest.config.ts --ui"
   },
