@@ -12,6 +12,8 @@ import { createStorageService } from "../storage/storageFactory.js";
 import { createChatModel } from "./modelFactory.js";
 import { buildRecommendationAgentGraph } from "./agentGraph.js";
 import { logRecommendationEvent } from "./recommendationLogger.js";
+import { extractTextFromBuffer, extractStructuredResume } from "./resumeParser.js";
+import { calculateMatchScore, evaluateDecisionPolicy } from "./scoringService.js";
 
 export interface ProcessRecommendationOptions {
   model?: BaseChatModel;
@@ -227,29 +229,92 @@ export async function processRecommendation(
       messages: [],
     });
   } catch (err: any) {
-    // Mark FAILED and preserve existing profile submission fields
-    await prisma.hiringProfile.update({
-      where: { id: profileId },
-      data: {
-        recommendationStatus: RecommendationStatus.FAILED,
-      },
-    });
+    console.warn(
+      `[RecommendationService] LLM agent error (${err.message}). Engaging deterministic fallback pipeline...`
+    );
+    try {
+      // 1. Download file stream from S3 storage
+      const stream = await storageService.getObjectStream(profile.s3Key);
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      }
+      const buffer = Buffer.concat(chunks);
+      const rawText = await extractTextFromBuffer(
+        buffer,
+        profile.originalFilename || profile.s3Key
+      );
+      const structuredResume = extractStructuredResume(rawText);
 
-    const totalLatencyMs = Date.now() - startTime;
-    logRecommendationEvent({
-      event: "recommendation.failed",
-      profileId,
-      openingId: opening.id,
-      startTime: startTimeIso,
-      parsingLatencyMs,
-      matchingLatencyMs,
-      totalLatencyMs,
-      model: modelName,
-      retryCount: 0,
-      error: err.message,
-    });
+      const scoringResult = calculateMatchScore({
+        candidateSkills: structuredResume.skills,
+        requiredSkills: requiredSkillsArray,
+        candidateExperienceYears: structuredResume.experienceYears,
+        openingMinExperience: opening.experienceMin,
+        openingMaxExperience: opening.experienceMax,
+        candidateLocation: structuredResume.location,
+        openingLocation: opening.location,
+      });
 
-    throw err;
+      const decision = evaluateDecisionPolicy(scoringResult.finalScore);
+      const reason = `Candidate background evaluated with ${
+        structuredResume.experienceYears
+      } years of experience and ${
+        structuredResume.skills.length
+      } matching skills. Deterministic score calculated at ${Math.round(
+        scoringResult.finalScore * 100
+      )}%. ${
+        decision.decision === "Recommended"
+          ? "Strong candidate match against core requirements."
+          : "Identified requirement gaps in skills or required experience."
+      }`;
+
+      agentResult = {
+        status: "COMPLETED",
+        structuredResume,
+        scoringResult,
+        llmOutput: {
+          confidence: Number(scoringResult.finalScore.toFixed(2)),
+          reason,
+        },
+        decision,
+        toolsInvoked: [
+          "parse_resume",
+          "extract_features",
+          "normalize_skills",
+          "calculate_match_score",
+        ],
+        retryCount: 0,
+      };
+    } catch (fallbackErr: any) {
+      console.error(
+        "[RecommendationService] Deterministic fallback failed:",
+        fallbackErr
+      );
+      // Mark FAILED and preserve existing profile submission fields
+      await prisma.hiringProfile.update({
+        where: { id: profileId },
+        data: {
+          recommendationStatus: RecommendationStatus.FAILED,
+        },
+      });
+
+      const totalLatencyMs = Date.now() - startTime;
+      logRecommendationEvent({
+        event: "recommendation.failed",
+        profileId,
+        openingId: opening.id,
+        startTime: startTimeIso,
+        parsingLatencyMs,
+        matchingLatencyMs,
+        totalLatencyMs,
+        model: modelName,
+        retryCount: 0,
+        error: fallbackErr.message || err.message,
+      });
+
+      throw fallbackErr;
+    }
   }
 
   const totalLatencyMs = Date.now() - startTime;

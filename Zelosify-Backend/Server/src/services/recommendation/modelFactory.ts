@@ -74,7 +74,7 @@ export function createChatModel(options?: {
   if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
     return new ChatGoogleGenerativeAI({
       apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY,
-      model: options?.modelName || "gemini-3.5-flash",
+      model: options?.modelName || "gemini-3-flash-preview",
       temperature: options?.temperature ?? 0,
       maxRetries: 4,
     });

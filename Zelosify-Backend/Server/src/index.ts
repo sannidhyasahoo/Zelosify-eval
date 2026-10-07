@@ -121,8 +121,14 @@ async function startServer() {
     // Start the server on specified port
     const PORT = process.env.PORT || 5000;
 
-    app.listen(PORT, () => {
+    app.listen(PORT, async () => {
       console.log(`Server running on port ${PORT}...`);
+      try {
+        const { seedForHireguy } = await import("./scripts/seedForHireguy.js");
+        await seedForHireguy();
+      } catch (seedErr) {
+        console.error("Seed hireguy error:", seedErr);
+      }
     });
   } catch (error) {
     // Handle server initialization errors
